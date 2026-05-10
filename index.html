@@ -400,28 +400,50 @@ const icon=n=>ICONS[n.toLowerCase()]||'🛍️';
 
 /* ─── CATEGORIE ──────────────────────────── */
 const CATS=[
-  {name:'Colazione',   emoji:'☀️', color:'#C4A35A',tc:'#2a1500'},
-  {name:'Cura corpo',  emoji:'🧴', color:'#6B9FAF',tc:'#00172a'},
-  {name:'Pranzo',      emoji:'🥗', color:'#6B8F71',tc:'#002a0f'},
-  {name:'Pulizia casa',emoji:'🧹', color:'#9B7FA6',tc:'#1e002a'},
+  {name:'Colazione',           emoji:'☀️', color:'#FFB830',tc:'#2a1500'},
+  {name:'Cura corpo',          emoji:'🧴', color:'#5BBFFF',tc:'#00172a'},
+  {name:'Verdure e frutta',    emoji:'🥦', color:'#6BBF6B',tc:'#002a0f'},
+  {name:'Acqua',               emoji:'💧', color:'#4AABE8',tc:'#001a2a'},
+  {name:'Sughi e pasta',       emoji:'🍝', color:'#E8734A',tc:'#2a0f00'},
+  {name:'Bibite e bevande',    emoji:'🥤', color:'#E8A84A',tc:'#2a1a00'},
+  {name:'Formaggi e affettati',emoji:'🧀', color:'#D4A850',tc:'#2a1800'},
+  {name:'Pane',                emoji:'🍞', color:'#C4935A',tc:'#2a1000'},
+  {name:'Cibo gatti',          emoji:'🐱', color:'#A07898',tc:'#1e0028'},
+  {name:'Detersivi',           emoji:'🧹', color:'#7898C8',tc:'#001028'},
 ];
 
 /* ─── DATI DEFAULT ───────────────────────── */
 const DEFS=[
-  {name:'Cereali',cat:'Colazione',order:1},{name:'Latte',cat:'Colazione',order:2},
-  {name:'Merendine',cat:'Colazione',order:3},{name:'Biscotti',cat:'Colazione',order:4},
-  {name:'Bagnoschiuma',cat:'Cura corpo',order:1},{name:'Shampoo',cat:'Cura corpo',order:2},
-  {name:'Cotton fioc',cat:'Cura corpo',order:3},{name:'Lacca',cat:'Cura corpo',order:4},
-  {name:'Scottex',cat:'Cura corpo',order:5},{name:'Carta igienica',cat:'Cura corpo',order:6},
-  {name:'Acqua',cat:'Pranzo',order:1},{name:'Pasta',cat:'Pranzo',order:2},
-  {name:'Sughi',cat:'Pranzo',order:3},{name:'Prosciutto cotto',cat:'Pranzo',order:4},
-  {name:'Uova',cat:'Pranzo',order:5},{name:'Piadine',cat:'Pranzo',order:6},
-  {name:'Taralli',cat:'Pranzo',order:7},{name:'Grissini',cat:'Pranzo',order:8},
-  {name:'Pane',cat:'Pranzo',order:9},{name:'Yogurt',cat:'Pranzo',order:10},
-  {name:'Cibo gatti',cat:'Pranzo',order:11},
-  {name:'Detersivo lavatrice',cat:'Pulizia casa',order:1},
-  {name:'Detersivo lavastoviglie',cat:'Pulizia casa',order:2},
-  {name:'Acchiappa colore',cat:'Pulizia casa',order:3},
+  {name:'Cereali',cat:'Colazione',order:1},
+  {name:'Latte',cat:'Colazione',order:2},
+  {name:'Merendine',cat:'Colazione',order:3},
+  {name:'Biscotti',cat:'Colazione',order:4},
+  {name:'Bagnoschiuma',cat:'Cura corpo',order:1},
+  {name:'Shampoo',cat:'Cura corpo',order:2},
+  {name:'Cotton fioc',cat:'Cura corpo',order:3},
+  {name:'Lacca',cat:'Cura corpo',order:4},
+  {name:'Scottex',cat:'Cura corpo',order:5},
+  {name:'Carta igienica',cat:'Cura corpo',order:6},
+  {name:'Insalata',cat:'Verdure e frutta',order:1},
+  {name:'Pomodori',cat:'Verdure e frutta',order:2},
+  {name:'Frutta',cat:'Verdure e frutta',order:3},
+  {name:'Acqua',cat:'Acqua',order:1},
+  {name:'Pasta',cat:'Sughi e pasta',order:1},
+  {name:'Sughi',cat:'Sughi e pasta',order:2},
+  {name:'Bibite',cat:'Bibite e bevande',order:1},
+  {name:'Succhi',cat:'Bibite e bevande',order:2},
+  {name:'Prosciutto cotto',cat:'Formaggi e affettati',order:1},
+  {name:'Formaggio',cat:'Formaggi e affettati',order:2},
+  {name:'Yogurt',cat:'Formaggi e affettati',order:3},
+  {name:'Uova',cat:'Formaggi e affettati',order:4},
+  {name:'Pane',cat:'Pane',order:1},
+  {name:'Piadine',cat:'Pane',order:2},
+  {name:'Grissini',cat:'Pane',order:3},
+  {name:'Taralli',cat:'Pane',order:4},
+  {name:'Cibo gatti',cat:'Cibo gatti',order:1},
+  {name:'Detersivo lavatrice',cat:'Detersivi',order:1},
+  {name:'Detersivo lavastoviglie',cat:'Detersivi',order:2},
+  {name:'Acchiappa colore',cat:'Detersivi',order:3},
 ];
 
 /* ─── STATE ──────────────────────────────── */
@@ -589,10 +611,16 @@ function lanciaConfetti(){
 
 /* ─── VOICE ──────────────────────────────── */
 var CAT_KEYWORDS = {
-  'Colazione':['cereali','biscotti','merendine','latte','caffe','te','succo','miele','marmellata','burro','yogurt','granola','fette','croissant','brioche'],
+  'Colazione':['cereali','biscotti','merendine','latte','caffe','te','miele','marmellata','burro','granola','fette','croissant','brioche','colazione'],
   'Cura corpo':['shampoo','bagnoschiuma','sapone','dentifricio','cotton','scottex','carta igienica','lacca','deodorante','crema','profumo','rasoi','gel','balsamo'],
-  'Pranzo':['pasta','sughi','riso','pane','uova','prosciutto','salame','formaggio','tonno','pesce','carne','verdura','frutta','acqua','bibite','birra','vino','piadine','taralli','grissini','cibo gatti','olio','sale','zucchero','farina','brodo','legumi','fagioli','ceci','lenticchie','pomodoro','cipolla','aglio','patate'],
-  'Pulizia casa':['detersivo','acchiappa','candeggina','ammorbidente','lavastoviglie','lavatrice','spugna','guanti','sacchetti','pattumiera','vetri','pavimenti']
+  'Verdure e frutta':['verdura','frutta','insalata','pomodoro','cipolla','aglio','patate','carote','zucchine','melanzane','peperoni','spinaci','broccoli','mela','pera','banana','arancia','limone','uva','fragole','anguria','melone'],
+  'Acqua':['acqua'],
+  'Sughi e pasta':['pasta','sughi','sugo','riso','lasagne','fusilli','spaghetti','penne','rigatoni','gnocchi','olio','sale','zucchero','farina','brodo','legumi','fagioli','ceci','lenticchie','tonno','pesce'],
+  'Bibite e bevande':['bibite','bevande','succo','succhi','aranciata','coca','cola','fanta','sprite','birra','vino','prosecco','limonata','tonica'],
+  'Formaggi e affettati':['formaggio','prosciutto','salame','mortadella','bresaola','speck','pancetta','coppa','yogurt','uova','parmigiano','mozzarella','ricotta','grana','pecorino','scamorza'],
+  'Pane':['pane','piadine','grissini','taralli','focaccia','ciabatta','baguette','crackers','fette biscottate'],
+  'Cibo gatti':['gatti','gatto','cibo gatti','whiskas','felix'],
+  'Detersivi':['detersivo','acchiappa','candeggina','ammorbidente','lavastoviglie','lavatrice','spugna','guanti','sacchetti','pattumiera','vetri','pavimenti','dash','ariel','ace']
 };
 
 function guessCat(name) {
