@@ -585,6 +585,28 @@ function lanciaConfetti(){
 }
 
 /* ─── VOICE ──────────────────────────────── */
+
+/* Mappa categorie per parole chiave */
+var CAT_KEYWORDS = {
+  'Colazione':['cereali','biscotti','merendine','latte','caffe','te','succo','miele','marmellata','burro','yogurt','granola','fette','croissant','brioche'],
+  'Cura corpo':['shampoo','bagnoschiuma','sapone','dentifricio','cotton','scottex','carta igienica','lacca','deodorante','crema','profumo','rasoi','gel','balsamo'],
+  'Pranzo':['pasta','sughi','riso','pane','uova','prosciutto','salame','formaggio','tonno','pesce','carne','verdura','frutta','acqua','bibite','birra','vino','piadine','taralli','grissini','cibo gatti','olio','sale','zucchero','farina','brodo','legumi','fagioli','ceci','lenticchie','pomodoro','cipolla','aglio','patate'],
+  'Pulizia casa':['detersivo','acchiappa','candeggina','ammorbidente','lavastoviglie','lavatrice','spugna','guanti','sacchetti','pattumiera','vetri','pavimenti']
+};
+
+function guessCat(name) {
+  var n = name.toLowerCase();
+  var cats = Object.keys(CAT_KEYWORDS);
+  for (var i = 0; i < cats.length; i++) {
+    var kw = CAT_KEYWORDS[cats[i]];
+    for (var j = 0; j < kw.length; j++) {
+      if (n.indexOf(kw[j]) !== -1) return cats[i];
+    }
+  }
+  return null;
+}
+
+
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 var vRecog = null;
 var vListaItems = [];   // lista provvisoria
