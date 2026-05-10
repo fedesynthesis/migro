@@ -281,15 +281,17 @@ header{
 
     <!-- MIC BUTTON GRANDE -->
     <button id="vMicBtn"
-      onmousedown="vPressStart()" onmouseup="vPressStop()" onmouseleave="vPressStop()"
-      ontouchstart="vPressStart(event)" ontouchend="vPressStop()" ontouchcancel="vPressStop()"
-      style="width:100%;border:none;border-radius:16px;padding:20px;
-      font-family:'Lato',sans-serif;font-size:16px;font-weight:700;
+      onmousedown="vPressStart(event)" onmouseup="vPressStop(event)" onmouseleave="vPressStop(event)"
+      ontouchstart="vPressStart(event)" ontouchend="vPressStop(event)" ontouchcancel="vPressStop(event)"
+      style="width:100%;border:none;border-radius:20px;padding:22px 16px;
+      font-family:'Lato',sans-serif;font-size:17px;font-weight:700;
       cursor:pointer;display:flex;align-items:center;justify-content:center;
-      gap:10px;margin-bottom:10px;transition:all .15s;
+      gap:10px;margin-bottom:12px;
       background:var(--or);color:#fff;
-      box-shadow:0 4px 16px rgba(107,143,113,.35);
-      user-select:none;-webkit-user-select:none;">
+      box-shadow:0 2px 0px rgba(0,0,0,0.2);
+      user-select:none;-webkit-user-select:none;
+      -webkit-touch-callout:none;touch-action:none;
+      transform:none !important;position:relative;top:0 !important;">
       🎙️ Tieni premuto e parla
     </button>
 
@@ -662,12 +664,13 @@ function vAggiungiTesto(testo) {
 
 /* Press and hold microfono */
 function vPressStart(e) {
-  if (e) e.preventDefault();
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   if (vListening) return;
   vStartMic();
 }
 
-function vPressStop() {
+function vPressStop(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   if (!vListening) return;
   vStopMic();
 }
@@ -689,6 +692,7 @@ function vStartMic() {
   vRecog.continuous = true;
   vRecog.interimResults = true;
 
+  var vAccumulato = '';
   vRecog.onresult = function(e) {
     var finale = '';
     var interim = '';
@@ -696,20 +700,10 @@ function vStartMic() {
       if (e.results[i].isFinal) finale += e.results[i][0].transcript + ' ';
       else interim += e.results[i][0].transcript;
     }
-    document.getElementById('vStat').textContent = (finale + interim).trim() || 'In ascolto...';
-
-    // Ogni risultato finale viene aggiunto subito come articolo
-    if (finale.trim()) {
-      vAggiungiTesto(finale.trim());
-      // reset per il prossimo articolo
-      if (vRecog) {
-        try { vRecog.stop(); } catch(ex) {}
-        // riparte subito per ascoltare il prossimo
-        setTimeout(function() {
-          if (vListening) vStartMicContinuo();
-        }, 300);
-      }
-    }
+    if (finale) vAccumulato += finale;
+    // Mostra tutto quello che ha sentito finora
+    var mostra = (vAccumulato + interim).trim();
+    document.getElementById('vStat').textContent = mostra || 'In ascolto...';
   };
 
   vRecog.onerror = function(e) {
@@ -771,11 +765,25 @@ function vStartMicContinuo() {
 
 function vStopMic() {
   vListening = false;
+  // Processa il testo accumulato quando si rilascia
+  var testo = '';
+  try {
+    var stat = document.getElementById('vStat').textContent;
+    if (stat && stat !== 'In ascolto...' && stat !== 'Tieni premuto il microfono e parla') {
+      testo = stat;
+    }
+  } catch(ex) {}
   if (vRecog) { try { vRecog.stop(); } catch(ex) {} vRecog = null; }
   document.getElementById('vWaves').style.display = 'none';
   document.getElementById('vMicBtn').textContent = '🎙️ Tieni premuto e parla';
   document.getElementById('vMicBtn').style.background = 'var(--or)';
-  document.getElementById('vStat').textContent = 'Rileggi e premi Aggiungi alla spesa';
+  // Aggiungi tutto il testo dettato alla lista
+  if (testo.trim()) {
+    vAggiungiTesto(testo.trim());
+    document.getElementById('vStat').textContent = 'Aggiunto! Premi ancora o conferma';
+  } else {
+    document.getElementById('vStat').textContent = 'Tieni premuto e parla';
+  }
 }
 
 function startVoice() {
