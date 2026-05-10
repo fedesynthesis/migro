@@ -673,13 +673,17 @@ function vRimuovi(i) {
 }
 
 /* PRESS AND HOLD */
+var vTestoAccumulato = ''; // variabile globale per il testo
+
 function vPressStart(e) {
   e.preventDefault();
   e.stopPropagation();
   if (vListening) return;
   vListening = true;
-  document.getElementById('vMicBtn').style.background = '#8b3a3a';
+  vTestoAccumulato = ''; // reset
+
   document.getElementById('vMicTxt').textContent = '🔴 Sto ascoltando...';
+  document.getElementById('vMicBtn').style.background = '#8b3a3a';
   document.getElementById('vWaves').style.display = 'flex';
   document.getElementById('vStat').textContent = 'Parla ora...';
 
@@ -689,7 +693,6 @@ function vPressStart(e) {
   vRecog.lang = 'it-IT';
   vRecog.continuous = true;
   vRecog.interimResults = true;
-  var accumulato = '';
 
   vRecog.onresult = function(e) {
     var fin = '', tmp = '';
@@ -697,22 +700,11 @@ function vPressStart(e) {
       if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
       else tmp += e.results[i][0].transcript;
     }
-    if (fin) accumulato += fin;
-    document.getElementById('vStat').textContent = (accumulato + tmp).trim() || 'Parla ora...';
+    if (fin) vTestoAccumulato += fin; // salva in variabile globale
+    document.getElementById('vStat').textContent = (vTestoAccumulato + tmp).trim() || 'Parla ora...';
   };
-  vRecog.onerror = function() {};
-  vRecog.onend = function() {
-    if (vListening) {
-      // Safari ha chiuso il mic - processa quello che c'era
-      if (accumulato.trim()) {
-        vAggiungiTesto(accumulato.trim());
-        accumulato = '';
-      }
-    }
-  };
-
-  // Salva riferimento all'accumulato per usarlo in vPressStop
-  vRecog._accumulato = function() { return accumulato; };
+  vRecog.onerror = function(e) { console.log('mic error', e.error); };
+  vRecog.onend = function() {};
   vRecog.start();
 }
 
@@ -722,20 +714,24 @@ function vPressStop(e) {
   if (!vListening) return;
   vListening = false;
 
-  // Prendi il testo accumulato e aggiungilo alla lista
-  var testo = '';
-  if (vRecog && vRecog._accumulato) testo = vRecog._accumulato();
+  // Ferma il mic
   if (vRecog) { try { vRecog.stop(); } catch(ex) {} vRecog = null; }
 
+  // Ripristina UI tasto
   document.getElementById('vWaves').style.display = 'none';
   document.getElementById('vMicBtn').style.background = 'var(--or)';
   document.getElementById('vMicTxt').textContent = '🎙️ Tieni premuto e parla';
 
-  if (testo.trim()) {
-    vAggiungiTesto(testo.trim());
+  // Usa il testo accumulato nella variabile globale
+  var testo = vTestoAccumulato.trim();
+  console.log('Testo accumulato:', testo);
+
+  if (testo) {
+    vAggiungiTesto(testo);
+    vTestoAccumulato = '';
     document.getElementById('vStat').textContent = 'Aggiunto! Premi ancora o conferma';
   } else {
-    document.getElementById('vStat').textContent = vListaItems.length ? 'Premi ancora o conferma' : 'Tieni premuto e parla';
+    document.getElementById('vStat').textContent = 'Non ho sentito nulla. Riprova!';
   }
 }
 
