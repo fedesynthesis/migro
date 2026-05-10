@@ -791,9 +791,6 @@ function vPressStart(e) {
   vListening = true;
   vTestoAccumulato = '';
   vRisultatiSalvati = [];
-  var pauseTimer = null;      // timer pausa tra articoli
-  var articoloCorrente = '';  // parole dell articolo in costruzione
-  var PAUSA_MS = 900;         // ms di silenzio = nuovo articolo
 
   document.getElementById('vMicTxt').textContent = '🔴 Rilascia per aggiungere';
   document.getElementById('vMicBtn').style.background = '#8b3a3a';
@@ -807,47 +804,51 @@ function vPressStart(e) {
   vRecog.continuous = true;
   vRecog.interimResults = true;
 
-  vRecog.onresult = function(e) {
+  var pausaTimer = null;
+  var bufferCorrente = ''; // accumula parole dell articolo corrente
+  var PAUSA = 800; // ms pausa = nuovo articolo
+
+  vRecog.onresult = function(evt) {
     var fin = '', tmp = '';
-    for (var i = 0; i < e.results.length; i++) {
-      if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
-      else tmp += e.results[i][0].transcript;
+    for (var i = 0; i < evt.results.length; i++) {
+      if (evt.results[i].isFinal) fin += evt.results[i][0].transcript + ' ';
+      else tmp += evt.results[i][0].transcript;
     }
 
     if (fin.trim()) {
-      // Hai detto qualcosa di finale — aggiungilo all articolo corrente
-      articoloCorrente += (articoloCorrente ? ' ' : '') + fin.trim();
-      vTestoAccumulato = vRisultatiSalvati.join(', ') + (vRisultatiSalvati.length ? ', ' : '') + articoloCorrente;
+      // Aggiunge al buffer dell articolo corrente
+      bufferCorrente += (bufferCorrente ? ' ' : '') + fin.trim();
+      // Salva subito anche in accumulato per il fallback
+      vTestoAccumulato = bufferCorrente;
 
-      // Reset il timer di pausa
-      if (pauseTimer) clearTimeout(pauseTimer);
-      pauseTimer = setTimeout(function() {
-        // Pausa superata = chiudi articolo corrente e inizia il prossimo
-        if (articoloCorrente.trim()) {
-          vRisultatiSalvati.push(articoloCorrente.trim());
-          articoloCorrente = '';
-          vTestoAccumulato = vRisultatiSalvati.join(', ');
-          document.getElementById('vStat').textContent = vTestoAccumulato;
+      // Reset timer pausa - se passa PAUSA ms senza nuove parole = chiude articolo
+      if (pausaTimer) clearTimeout(pausaTimer);
+      pausaTimer = setTimeout(function() {
+        if (bufferCorrente.trim()) {
+          vRisultatiSalvati.push(bufferCorrente.trim());
+          bufferCorrente = '';
+          document.getElementById('vStat').textContent =
+            vRisultatiSalvati.map(function(x,i){ return (i+1)+'. '+x; }).join('  |  ');
         }
-      }, PAUSA_MS);
+      }, PAUSA);
     }
 
-    // Mostra interim mentre parla
-    var mostra = vTestoAccumulato + (tmp ? (vTestoAccumulato ? ' ' : '') + tmp : '');
-    if (mostra.trim()) document.getElementById('vStat').textContent = mostra.trim();
+    // Mostra interim
+    var show = (bufferCorrente ? bufferCorrente + ' ' : '') + tmp;
+    if (show.trim()) document.getElementById('vStat').textContent = show.trim();
   };
 
-  vRecog.onerror = function(err) { console.log('Mic error:', err.error); };
+  vRecog.onerror = function(err) { console.log('errore mic:', err.error); };
   vRecog.onend = function() {
-    // Safari ha chiuso - salva articolo corrente se c e
-    if (articoloCorrente.trim()) {
-      vRisultatiSalvati.push(articoloCorrente.trim());
-      articoloCorrente = '';
-      vTestoAccumulato = vRisultatiSalvati.join(', ');
+    // Safari chiude il mic - salva buffer se c e
+    if (bufferCorrente.trim()) {
+      if (pausaTimer) clearTimeout(pausaTimer);
+      vRisultatiSalvati.push(bufferCorrente.trim());
+      bufferCorrente = '';
     }
   };
 
-  try { vRecog.start(); } catch(ex) { console.log('Start error:', ex); }
+  try { vRecog.start(); } catch(ex) { console.log('start err:', ex); }
 }
 
 function vPressStop(e) {
@@ -862,9 +863,15 @@ function vPressStop(e) {
   document.getElementById('vMicBtn').style.background = 'var(--or)';
   document.getElementById('vMicTxt').textContent = '🎙️ Tieni premuto e parla';
 
-  // Aggiungi ogni articolo di vRisultatiSalvati direttamente (senza split per spazio)
+  // Usa vRisultatiSalvati (ogni elemento = un articolo)
+  // Se vuoto usa vTestoAccumulato come fallback
+  var lista = vRisultatiSalvati.slice();
+  if (lista.length === 0 && vTestoAccumulato.trim().length > 1) {
+    lista = [vTestoAccumulato.trim()];
+  }
+
   var aggiunti = 0;
-  vRisultatiSalvati.forEach(function(art) {
+  lista.forEach(function(art) {
     var nome = art.trim();
     if (nome.length > 1) {
       nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
@@ -873,26 +880,19 @@ function vPressStop(e) {
     }
   });
 
-  // Fallback: se non ci sono risultati usa il testo accumulato
-  if (aggiunti === 0 && vTestoAccumulato.trim().length > 1) {
-    var nome = vTestoAccumulato.trim();
-    nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-    vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
-    aggiunti++;
-  }
-
   vTestoAccumulato = '';
   vRisultatiSalvati = [];
 
   if (aggiunti > 0) {
     vRenderLista();
-    document.getElementById('vStat').textContent = aggiunti + ' articol' + (aggiunti===1?'o':'i') + ' aggiunti! Premi ancora o conferma';
+    document.getElementById('vStat').textContent =
+      aggiunti === 1 ? '1 articolo aggiunto! Premi ancora o conferma' :
+      aggiunti + ' articoli aggiunti! Premi ancora o conferma';
   } else {
     document.getElementById('vStat').textContent = 'Non ho sentito nulla — riprova!';
   }
 }
 
-/* Apri pannello vocale */
 function startVoice() {
   vListaItems = [];
   vListening = false;
