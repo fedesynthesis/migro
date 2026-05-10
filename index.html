@@ -262,51 +262,62 @@ header{
 
 <!-- VOICE OVERLAY -->
 <div class="vov" id="vov">
-  <div class="vcard" style="max-height:85vh;overflow-y:auto">
-    <div class="vcard-top">
-      <div class="vcard-ico">🎙️</div>
-      <div class="vcard-title">Aggiungi articoli</div>
-      <div class="vcard-status" id="vStat">Parla oppure scrivi qui sotto</div>
+  <div class="vcard">
+
+    <!-- HEADER -->
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:36px;margin-bottom:6px">🎙️</div>
+      <div style="font-family:'Libre Baskerville',serif;font-size:20px;font-weight:700;color:var(--dk)">Lista provvisoria</div>
+      <div style="font-size:13px;color:var(--gr);margin-top:4px" id="vStat">Premi il microfono e parla</div>
     </div>
 
-    <!-- ONDE MENTRE ASCOLTA -->
-    <div class="waves" id="vWaves" style="display:none">
+    <!-- LISTA PROVVISORIA -->
+    <div style="min-height:80px;max-height:260px;overflow-y:auto;margin-bottom:14px;border:2px solid var(--gr2);border-radius:14px;padding:8px" id="vListaWrap">
+      <div id="vListaVuota" style="text-align:center;padding:20px;color:var(--gr);font-size:14px">
+        Nessun articolo ancora.<br>Parla o scrivi qui sotto.
+      </div>
+      <div id="vLista"></div>
+    </div>
+
+    <!-- MIC BUTTON GRANDE -->
+    <button id="vMicBtn" onclick="toggleMic()" style="
+      width:100%;border:none;border-radius:16px;padding:16px;
+      font-family:'Lato',sans-serif;font-size:16px;font-weight:700;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      gap:10px;margin-bottom:10px;transition:all .2s;
+      background:var(--or);color:#fff;
+      box-shadow:0 4px 16px rgba(107,143,113,.35)">
+      🎙️ Tieni premuto per parlare
+    </button>
+
+    <!-- ONDE AUDIO -->
+    <div class="waves" id="vWaves" style="display:none;margin:0 0 10px">
       <div class="wb"></div><div class="wb"></div><div class="wb"></div>
       <div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div>
     </div>
 
-    <!-- TESTO RICONOSCIUTO IN TEMPO REALE -->
-    <div class="vtranscript" id="vText" style="display:none">🎤 In ascolto…</div>
-
-    <!-- LISTA PROVVISORIA SEQUENZIALE -->
-    <div id="vListaSection" style="display:none;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--gr);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <span>Articoli da aggiungere</span>
-        <span id="vListaCount" style="color:var(--or);font-size:13px;font-weight:700"></span>
-      </div>
-      <div id="vLista" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:12px"></div>
-    </div>
-
     <!-- INPUT TASTIERA -->
-    <div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--gr);margin-bottom:7px">Scrivi con la tastiera</div>
-      <div style="display:flex;gap:8px">
-        <input id="kbInput" class="inp" placeholder="es. pane, latte, uova…"
-          style="flex:1;border-radius:12px;padding:11px 14px;font-size:14px"
-          onkeydown="if(event.key==='Enter')aggiungiDaTastiera()"/>
-        <button onclick="aggiungiDaTastiera()" style="background:var(--or);color:#fff;border:none;border-radius:12px;padding:11px 14px;font-size:20px;cursor:pointer;flex-shrink:0">➕</button>
-      </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input id="kbInput" class="inp" placeholder="Oppure scrivi qui..."
+        style="flex:1;border-radius:12px;padding:11px 14px;font-size:14px"
+        onkeydown="if(event.key==='Enter')kbAggiungi()"/>
+      <button onclick="kbAggiungi()" style="background:var(--or);color:#fff;border:none;border-radius:12px;padding:11px 16px;font-size:18px;cursor:pointer">➕</button>
     </div>
 
-    <!-- BOTTONI -->
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="btn-vstop" id="vMicBtn" onclick="toggleMic()">🎙️ Parla</button>
-      <button class="btn-vconfirm" id="vAddAllBtn" style="display:none" onclick="addAllPending()">✅ Aggiungi tutti</button>
+    <!-- TASTO CONFERMA + CHIUDI -->
+    <div style="display:flex;gap:8px">
+      <button onclick="closeVov()" style="flex:1;background:var(--gr2);color:var(--mid);border:none;border-radius:14px;padding:14px;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+        ✕ Annulla
+      </button>
+      <button id="vConfermaBtn" onclick="confermaLista()" style="flex:2;background:#4CD97B;color:#002a0f;border:none;border-radius:14px;padding:14px;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:none">
+        ✅ Aggiungi alla spesa
+      </button>
     </div>
-    <button class="btn-vstop" onclick="closeVov()">✕ Chiudi senza aggiungere</button>
+
   </div>
 </div>
 
+<!-- ADD MANUAL MODAL -->
 <!-- ADD MANUAL MODAL -->
 <!-- ADD MANUAL MODAL -->
 <div class="modal-bg" id="addModal">
@@ -574,145 +585,205 @@ function lanciaConfetti(){
 }
 
 /* ─── VOICE ──────────────────────────────── */
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let recog=null, vPending=[], isListening=false, allFinals='', addTimer=null;
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var vRecog = null;
+var vListaItems = [];   // lista provvisoria
+var vListening = false;
+var vSilenceTimer = null;
+var vCurrentText = '';
 
-function renderVLista(){
-  const lista=document.getElementById('vLista');
-  const sec=document.getElementById('vListaSection');
-  const cnt=document.getElementById('vListaCount');
-  if(!vPending.length){sec.style.display='none';return;}
-  sec.style.display='';
-  cnt.textContent=vPending.length+' articoli';
-  lista.innerHTML=vPending.map((it,i)=>`
-    <div style="background:var(--off);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px;border:1.5px solid var(--gr2)">
-      <div style="width:24px;height:24px;border-radius:50%;background:var(--or);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
-      <div style="flex:1">
-        <div style="font-size:15px;font-weight:600;color:var(--dk)">${icon(it.name)}&nbsp;${it.name}</div>
-        <div style="font-size:11px;color:var(--gr);margin-top:2px">${it.cat}</div>
-      </div>
-      <button onclick="rimuoviDaLista(${i})" style="background:none;border:none;color:var(--gr);font-size:18px;cursor:pointer;padding:2px 4px">✕</button>
-    </div>`).join('');
-  document.getElementById('vAddAllBtn').style.display=vPending.length?'':'none';
-}
-
-function rimuoviDaLista(i){
-  vPending.splice(i,1);
-  renderVLista();
-}
-
-function aggiungiArticoliALista(testo){
-  if(!testo.trim())return;
-  const parsed=parseVoiceText(testo);
-  const nuovi=parsed
-    .filter(n=>n.length>1)
-    .map(name=>({name,cat:guessCat(name)||'Pranzo'}));
-  vPending=[...vPending,...nuovi];
-  renderVLista();
-}
-
-function toggleMic(){
-  if(isListening){stopMic();return;}
-  startMic();
-}
-
-function startMic(){
-  if(!SR){alert('Riconoscimento vocale non disponibile. Usa Safari su iPhone.');return;}
-  allFinals='';
-  document.getElementById('vWaves').style.display='flex';
-  document.getElementById('vText').style.display='';
-  document.getElementById('vText').textContent='🎤 In ascolto…';
-  document.getElementById('vStat').textContent='Sto ascoltando…';
-  document.getElementById('vMicBtn').textContent='⏹ Ferma';
-  document.getElementById('vMicBtn').style.background='var(--dk)';
-  isListening=true;
-
-  recog=new SR();
-  recog.lang='it-IT';
-  recog.continuous=true;
-  recog.interimResults=true;
-
-  function mostraRisultati(testo){
-    if(addTimer){clearTimeout(addTimer);addTimer=null;}
-    if(!testo.trim())return;
-    document.getElementById('vWaves').style.display='none';
-    document.getElementById('vText').style.display='none';
-    document.getElementById('vStat').textContent='Leggi e conferma qui sotto 👇';
-    aggiungiArticoliALista(testo);
-    allFinals='';
+/* Renderizza la lista provvisoria */
+function vRenderLista() {
+  var lista = document.getElementById('vLista');
+  var vuota = document.getElementById('vListaVuota');
+  var confBtn = document.getElementById('vConfermaBtn');
+  if (!vListaItems.length) {
+    vuota.style.display = '';
+    lista.innerHTML = '';
+    confBtn.style.display = 'none';
+    return;
   }
+  vuota.style.display = 'none';
+  confBtn.style.display = '';
+  lista.innerHTML = vListaItems.map(function(it, i) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--gr2)">' +
+      '<div style="width:22px;height:22px;border-radius:50%;background:var(--or);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (i+1) + '</div>' +
+      '<div style="flex:1;font-size:15px;font-weight:600;color:var(--dk)">' + icon(it.name) + ' ' + it.name + '</div>' +
+      '<div style="font-size:11px;color:var(--gr);margin-right:4px">' + it.cat + '</div>' +
+      '<button onclick="vRimuovi(' + i + ')" style="background:none;border:none;color:var(--gr);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1">✕</button>' +
+      '</div>';
+  }).join('');
+}
 
-  recog.onresult=e=>{
-    let finali='',tmp='';
-    for(let r of e.results){
-      if(r.isFinal) finali+=r[0].transcript+' ';
-      else tmp+=r[0].transcript;
+function vRimuovi(i) {
+  vListaItems.splice(i, 1);
+  vRenderLista();
+}
+
+/* Aggiunge testo alla lista - splitta per separatori */
+function vAggiungiTesto(testo) {
+  if (!testo || !testo.trim()) return;
+  var parole = testo
+    .replace(/aggiungi|metti|voglio|serve/gi, '')
+    .split(/[,;.]+|\s+e\s+|\s+poi\s+|\s+anche\s+|\s+ed\s+/gi)
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s.length > 1; });
+  parole.forEach(function(nome) {
+    nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+    vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
+  });
+  vRenderLista();
+}
+
+/* Toggle microfono */
+function toggleMic() {
+  if (vListening) {
+    vStopMic();
+  } else {
+    vStartMic();
+  }
+}
+
+function vStartMic() {
+  if (!SR) {
+    alert('Microfono non disponibile. Usa Safari su iPhone.');
+    return;
+  }
+  vCurrentText = '';
+  vListening = true;
+  document.getElementById('vMicBtn').textContent = '⏹ Ferma microfono';
+  document.getElementById('vMicBtn').style.background = 'var(--dk)';
+  document.getElementById('vWaves').style.display = 'flex';
+  document.getElementById('vStat').textContent = 'In ascolto... parla!';
+
+  vRecog = new SR();
+  vRecog.lang = 'it-IT';
+  vRecog.continuous = true;
+  vRecog.interimResults = true;
+
+  vRecog.onresult = function(e) {
+    var finale = '';
+    var interim = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finale += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
     }
-    if(finali) allFinals+=finali;
-    const show=(allFinals+tmp).trim();
-    document.getElementById('vText').textContent=show||'🎤 In ascolto…';
-    if(addTimer)clearTimeout(addTimer);
-    if(allFinals.trim()){
-      addTimer=setTimeout(()=>mostraRisultati(allFinals),600);
+    document.getElementById('vStat').textContent = (finale + interim).trim() || 'In ascolto...';
+
+    // Ogni risultato finale viene aggiunto subito come articolo
+    if (finale.trim()) {
+      vAggiungiTesto(finale.trim());
+      // reset per il prossimo articolo
+      if (vRecog) {
+        try { vRecog.stop(); } catch(ex) {}
+        // riparte subito per ascoltare il prossimo
+        setTimeout(function() {
+          if (vListening) vStartMicContinuo();
+        }, 300);
+      }
     }
   };
-  recog.onerror=e=>{
-    stopMic();
-    if(allFinals.trim()) mostraRisultati(allFinals);
+
+  vRecog.onerror = function(e) {
+    vStopMic();
   };
-  recog.onend=()=>{
-    isListening=false;
-    document.getElementById('vMicBtn').textContent='🎙️ Parla ancora';
-    document.getElementById('vMicBtn').style.background='';
-    if(allFinals.trim()) mostraRisultati(allFinals);
+
+  vRecog.onend = function() {
+    if (vListening) {
+      // Safari ha chiuso - riprova
+      setTimeout(function() {
+        if (vListening) vStartMicContinuo();
+      }, 300);
+    } else {
+      document.getElementById('vWaves').style.display = 'none';
+      document.getElementById('vMicBtn').textContent = '🎙️ Tieni premuto per parlare';
+      document.getElementById('vMicBtn').style.background = 'var(--or)';
+      document.getElementById('vStat').textContent = 'Rileggi e premi Aggiungi alla spesa';
+    }
+  };
+
+  vRecog.start();
+}
+
+function vStartMicContinuo() {
+  // Riavvio silenzioso senza cambiare UI
+  vRecog = new SR();
+  vRecog.lang = 'it-IT';
+  vRecog.continuous = false;
+  vRecog.interimResults = true;
+
+  vRecog.onresult = function(e) {
+    var finale = '';
+    var interim = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finale += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    document.getElementById('vStat').textContent = (finale + interim).trim() || 'In ascolto...';
+    if (finale.trim()) {
+      vAggiungiTesto(finale.trim());
+      setTimeout(function() {
+        if (vListening) vStartMicContinuo();
+      }, 300);
+    }
+  };
+  vRecog.onerror = function() {
+    if (vListening) setTimeout(function(){ vStartMicContinuo(); }, 500);
+  };
+  vRecog.onend = function() {
+    if (vListening) setTimeout(function(){ vStartMicContinuo(); }, 300);
     else {
-      document.getElementById('vWaves').style.display='none';
-      document.getElementById('vStat').textContent='Premi 🎙️ per parlare di nuovo';
+      document.getElementById('vWaves').style.display = 'none';
+      document.getElementById('vMicBtn').textContent = '🎙️ Tieni premuto per parlare';
+      document.getElementById('vMicBtn').style.background = 'var(--or)';
+      document.getElementById('vStat').textContent = 'Rileggi e premi Aggiungi alla spesa';
     }
   };
-  recog.start();
+  try { vRecog.start(); } catch(ex) {}
 }
 
-function stopMic(){
-  if(recog)try{recog.stop();}catch(e){}
-  isListening=false;
-  document.getElementById('vMicBtn').textContent='🎙️ Parla ancora';
-  document.getElementById('vMicBtn').style.background='';
+function vStopMic() {
+  vListening = false;
+  if (vRecog) { try { vRecog.stop(); } catch(ex) {} vRecog = null; }
+  document.getElementById('vWaves').style.display = 'none';
+  document.getElementById('vMicBtn').textContent = '🎙️ Tieni premuto per parlare';
+  document.getElementById('vMicBtn').style.background = 'var(--or)';
+  document.getElementById('vStat').textContent = 'Rileggi e premi Aggiungi alla spesa';
 }
 
-function startVoice(){
-  vPending=[];allFinals='';
-  document.getElementById('vWaves').style.display='none';
-  document.getElementById('vText').style.display='none';
-  document.getElementById('vStat').textContent='Parla oppure scrivi qui sotto';
-  document.getElementById('vMicBtn').textContent='🎙️ Parla';
-  document.getElementById('vMicBtn').style.background='';
-  document.getElementById('vAddAllBtn').style.display='none';
-  document.getElementById('vListaSection').style.display='none';
-  document.getElementById('kbInput').value='';
+function startVoice() {
+  vListaItems = [];
+  vListening = false;
+  if (vRecog) { try { vRecog.stop(); } catch(ex) {} vRecog = null; }
+  document.getElementById('vStat').textContent = 'Premi il microfono e parla';
+  document.getElementById('vWaves').style.display = 'none';
+  document.getElementById('vMicBtn').textContent = '🎙️ Tieni premuto per parlare';
+  document.getElementById('vMicBtn').style.background = 'var(--or)';
+  document.getElementById('kbInput').value = '';
+  vRenderLista();
   document.getElementById('vov').classList.add('open');
-  // Avvia mic automaticamente
-  setTimeout(startMic, 300);
 }
 
-function addAllPending(){
-  vPending.forEach(it=>{if(it.name&&it.cat)push(it.name,it.cat);});
+function confermaLista() {
+  vListaItems.forEach(function(it) {
+    if (it.name && it.cat) push(it.name, it.cat);
+  });
   closeVov();
 }
 
-function aggiungiDaTastiera(){
-  const inp=document.getElementById('kbInput');
-  const testo=(inp.value||'').trim();
-  if(!testo)return;
-  aggiungiArticoliALista(testo);
-  inp.value='';
+function kbAggiungi() {
+  var inp = document.getElementById('kbInput');
+  var testo = (inp.value || '').trim();
+  if (!testo) return;
+  vAggiungiTesto(testo);
+  inp.value = '';
   inp.focus();
 }
 
-function closeVov(){
-  stopMic();
+function closeVov() {
+  vStopMic();
   document.getElementById('vov').classList.remove('open');
-  vPending=[];
+  vListaItems = [];
 }
 
 /* ─── INIT ───────────────────────────────── */
