@@ -598,11 +598,17 @@ function startVoice(){
     document.getElementById('vText').textContent=show||'🎤 In ascolto…';
     if(fin){
       const parsed=parseVoiceText(fin);
-      // assegna cat automatica dove possibile, metti in coda gli altri
-      vPending=parsed.map(name=>({name,cat:guessCat(name)||null}));
+      // assegna cat automatica, se non trovata usa Pranzo come default
+      vPending=parsed.map(name=>({name,cat:guessCat(name)||'Pranzo'}));
       document.getElementById('vWaves').style.display='none';
+      document.getElementById('vStat').textContent='✅ Aggiungo '+vPending.length+' prodotti…';
       renderVPending();
-      startCatQueue();
+      // aggiunge tutto automaticamente dopo 800ms
+      setTimeout(()=>{
+        vPending.forEach(it=>{if(it.name&&it.cat)push(it.name,it.cat);});
+        document.getElementById('vStat').textContent='✅ Aggiunti! Chiudo…';
+        setTimeout(closeVov, 900);
+      }, 800);
     }
   };
   recog.onerror=e=>{
