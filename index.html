@@ -219,14 +219,20 @@ header{
     </div>
 
   </div>
-  <div class="prog-strip">
-    <div class="prog-pct" id="progPct">0%</div>
-    <div class="prog-right">
-      <div class="prog-lbls">
-        <span class="prog-lbl">Progresso</span>
-        <span class="prog-lbl" id="progCnt">0 / 0 prodotti</span>
+  <div class="prog-strip" style="position:relative">
+    <div style="display:flex;align-items:center;gap:12px;flex:1">
+      <div class="prog-pct" id="progPct">0%</div>
+      <div class="prog-right" style="flex:1">
+        <div class="prog-lbls">
+          <span class="prog-lbl">Da prendere</span>
+          <span class="prog-lbl" id="progCnt">0 / 0</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
       </div>
-      <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <div id="bigCount" style="background:rgba(255,255,255,.95);color:var(--or);min-width:54px;height:54px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Lato',sans-serif;font-weight:900;line-height:1;padding:0 8px">
+        <span id="bigCountNum" style="font-size:22px">0</span>
+        <span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px">left</span>
+      </div>
     </div>
   </div>
 </header>
@@ -479,9 +485,12 @@ function save(){localStorage.setItem('migross_v1',JSON.stringify(items));}
 /* ─── RENDER ─────────────────────────────── */
 function renderProg(){
   const d=items.filter(i=>i.done).length, t=items.length, p=t?Math.round(d/t*100):0;
+  const remaining = t - d;
   document.getElementById('progFill').style.width=p+'%';
   document.getElementById('progPct').textContent=p+'%';
-  document.getElementById('progCnt').textContent=`${d} / ${t} prodotti`;
+  document.getElementById('progCnt').textContent=d+' / '+t;
+  var bigC = document.getElementById('bigCountNum');
+  if (bigC) bigC.textContent = remaining;
 }
 function renderTabs(){
   document.getElementById('tabs').innerHTML=
@@ -515,22 +524,28 @@ function renderContent(){
     // prima non done, poi done
     const todo=ci.filter(i=>!i.done), done=ci.filter(i=>i.done);
     [...todo,...done].forEach(it=>{
-      h+=`<div class="item-card ${it.done?'done':''}" style="--al:${cat.color}" onclick="toggle(${it.id})">
-        <div class="cb">
-          <svg width="14" height="14" viewBox="0 0 14 14">
-            <path d="M2 7L5.5 10.5L12 3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="i-body">
-          <div class="i-icon">${icon(it.name)}</div>
-          <div class="i-text">
-            <div class="i-name">${it.name}</div>
-            <div class="i-meta">${cat.name}</div>
-          </div>
-        </div>
-        <div class="i-num">${it.order}</div>
-        <button onclick="event.stopPropagation();deleteItem(${it.id})" style="background:none;border:none;font-size:17px;color:#BBA898;cursor:pointer;padding:4px 2px 4px 6px;line-height:1">🗑️</button>
-      </div>`;
+      var q = it.qty || 1;
+      var nota = it.note || '';
+      var qtyDisplay = q > 1 ? ' <span style="color:var(--or);font-weight:700">x' + q + '</span>' : '';
+      var notaHtml = nota ? '<div style="font-size:11px;color:var(--or);margin-top:2px;font-style:italic">📝 ' + nota + '</div>' : '';
+      h += '<div class="item-card ' + (it.done?'done':'') + '" style="--al:' + cat.color + '" onclick="toggle(' + it.id + ')">' +
+        '<div class="cb"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7L5.5 10.5L12 3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+        '<div class="i-body">' +
+          '<div class="i-icon">' + icon(it.name) + '</div>' +
+          '<div class="i-text">' +
+            '<div class="i-name">' + it.name + qtyDisplay + '</div>' +
+            '<div class="i-meta">' + cat.name + '</div>' +
+            notaHtml +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:3px;flex-shrink:0;margin-right:4px">' +
+          '<button onclick="event.stopPropagation();changeQty(' + it.id + ',-1)" style="background:var(--gr2);border:none;width:28px;height:28px;border-radius:8px;font-size:18px;font-weight:700;color:var(--mid);cursor:pointer;line-height:1;padding:0">−</button>' +
+          '<span style="min-width:20px;text-align:center;font-size:13px;font-weight:700;color:var(--dk)">' + q + '</span>' +
+          '<button onclick="event.stopPropagation();changeQty(' + it.id + ',1)" style="background:var(--or);border:none;width:28px;height:28px;border-radius:8px;font-size:18px;font-weight:700;color:#fff;cursor:pointer;line-height:1;padding:0">+</button>' +
+        '</div>' +
+        '<button onclick="event.stopPropagation();editNote(' + it.id + ')" style="background:none;border:none;font-size:17px;color:var(--gr);cursor:pointer;padding:4px 3px;line-height:1" title="Nota">📝</button>' +
+        '<button onclick="event.stopPropagation();deleteItem(' + it.id + ')" style="background:none;border:none;font-size:16px;color:#BBA898;cursor:pointer;padding:4px 2px;line-height:1">🗑️</button>' +
+      '</div>';
     });
     h+=`</div></div>`;
   });
@@ -544,8 +559,13 @@ function render(){renderProg();renderTabs();renderContent();}
 function setTab(t){tab=t;render();window.scrollTo(0,0);}
 
 function toggle(id){
-  const it=items.find(i=>i.id===id);
-  if(it){it.done=!it.done;save();render();}
+  var it = items.find(function(i){return i.id===id;});
+  if (it) {
+    it.done = !it.done;
+    save();
+    render();
+    if (typeof vibrate === 'function') vibrate(it.done ? 30 : 15);
+  }
 }
 
 function deleteItem(id){
@@ -556,25 +576,52 @@ function deleteItem(id){
 }
 
 function push(name,cat){
-  // Cerca articolo esistente con stesso nome (ignora maiuscole/minuscole)
   var esistente = items.find(function(i){ return i.name.toLowerCase() === name.toLowerCase(); });
   if (esistente) {
-    // Se esiste e e spuntato, togli la spunta (rimettilo da fare)
     if (esistente.done) {
       esistente.done = false;
       save();
       render();
     }
-    // Se esiste ma non spuntato, non fare nulla (gia in lista)
     return;
   }
-  // Nuovo articolo
   var ci = items.filter(function(i){ return i.cat === cat; });
   var mo = ci.length ? Math.max.apply(null, ci.map(function(i){return i.order;})) : 0;
   var id = items.length ? Math.max.apply(null, items.map(function(i){return i.id;})) + 1 : 0;
-  items.push({id:id, name:name, cat:cat, order:mo+1, done:false});
+  items.push({id:id, name:name, cat:cat, order:mo+1, done:false, qty:1, note:''});
   save();
   render();
+}
+
+// Cambia quantita
+function changeQty(id, delta) {
+  var it = items.find(function(i){return i.id===id;});
+  if (!it) return;
+  it.qty = (it.qty || 1) + delta;
+  if (it.qty < 1) it.qty = 1;
+  if (it.qty > 99) it.qty = 99;
+  save();
+  render();
+  vibrate(20);
+}
+
+// Modifica nota
+function editNote(id) {
+  var it = items.find(function(i){return i.id===id;});
+  if (!it) return;
+  var nota = prompt('Nota per ' + it.name + ' (es. marca, formato):', it.note || '');
+  if (nota !== null) {
+    it.note = nota.trim();
+    save();
+    render();
+  }
+}
+
+// Vibrazione (se supportata)
+function vibrate(ms) {
+  if (navigator.vibrate) {
+    try { navigator.vibrate(ms); } catch(e) {}
+  }
 }
 
 function openAddModal(){
