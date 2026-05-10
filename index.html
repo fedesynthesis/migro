@@ -556,13 +556,25 @@ function deleteItem(id){
 }
 
 function push(name,cat){
-  // se esiste già con stesso nome+cat, non duplicare
-  if(items.find(i=>i.name.toLowerCase()===name.toLowerCase()&&i.cat===cat))return;
-  const ci=items.filter(i=>i.cat===cat);
-  const mo=ci.length?Math.max(...ci.map(i=>i.order)):0;
-  const id=items.length?Math.max(...items.map(i=>i.id))+1:0;
-  items.push({id,name,cat,order:mo+1,done:false});
-  save();render();
+  // Cerca articolo esistente con stesso nome (ignora maiuscole/minuscole)
+  var esistente = items.find(function(i){ return i.name.toLowerCase() === name.toLowerCase(); });
+  if (esistente) {
+    // Se esiste e e spuntato, togli la spunta (rimettilo da fare)
+    if (esistente.done) {
+      esistente.done = false;
+      save();
+      render();
+    }
+    // Se esiste ma non spuntato, non fare nulla (gia in lista)
+    return;
+  }
+  // Nuovo articolo
+  var ci = items.filter(function(i){ return i.cat === cat; });
+  var mo = ci.length ? Math.max.apply(null, ci.map(function(i){return i.order;})) : 0;
+  var id = items.length ? Math.max.apply(null, items.map(function(i){return i.id;})) + 1 : 0;
+  items.push({id:id, name:name, cat:cat, order:mo+1, done:false});
+  save();
+  render();
 }
 
 function openAddModal(){
@@ -869,11 +881,11 @@ render();
 <script>
 // ── PWA SETUP ──────────────────────────────────────────────
 (function(){
-  // Inline manifest
+  // Manifest inline
   const manifest = {
     name: "Spesa Migross",
     short_name: "Migross",
-    description: "La tua lista della spesa",
+    description: "Lista della spesa",
     start_url: "./",
     display: "standalone",
     background_color: "#F4F7F4",
@@ -886,8 +898,14 @@ render();
   const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
   document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
 
-  // Service Worker con cache completa per offline
-// SW disabled - works via localStorage
+  // Service Worker per offline
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function(reg) { console.log('SW registrato'); })
+        .catch(function(e) { console.log('SW non registrato (normale in dev):', e.message); });
+    });
+  }
 })();
 </script>
 
