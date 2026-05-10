@@ -804,49 +804,22 @@ function vPressStart(e) {
   vRecog.continuous = true;
   vRecog.interimResults = true;
 
-  var pausaTimer = null;
-  var bufferCorrente = ''; // accumula parole dell articolo corrente
-  var PAUSA = 800; // ms pausa = nuovo articolo
-
   vRecog.onresult = function(evt) {
     var fin = '', tmp = '';
     for (var i = 0; i < evt.results.length; i++) {
       if (evt.results[i].isFinal) fin += evt.results[i][0].transcript + ' ';
       else tmp += evt.results[i][0].transcript;
     }
-
     if (fin.trim()) {
-      // Aggiunge al buffer dell articolo corrente
-      bufferCorrente += (bufferCorrente ? ' ' : '') + fin.trim();
-      // Salva subito anche in accumulato per il fallback
-      vTestoAccumulato = bufferCorrente;
-
-      // Reset timer pausa - se passa PAUSA ms senza nuove parole = chiude articolo
-      if (pausaTimer) clearTimeout(pausaTimer);
-      pausaTimer = setTimeout(function() {
-        if (bufferCorrente.trim()) {
-          vRisultatiSalvati.push(bufferCorrente.trim());
-          bufferCorrente = '';
-          document.getElementById('vStat').textContent =
-            vRisultatiSalvati.map(function(x,i){ return (i+1)+'. '+x; }).join('  |  ');
-        }
-      }, PAUSA);
+      vTestoAccumulato += fin;
+      vRisultatiSalvati.push(fin.trim());
     }
-
-    // Mostra interim
-    var show = (bufferCorrente ? bufferCorrente + ' ' : '') + tmp;
-    if (show.trim()) document.getElementById('vStat').textContent = show.trim();
+    var show = (vTestoAccumulato + tmp).trim();
+    if (show) document.getElementById('vStat').textContent = show;
   };
 
-  vRecog.onerror = function(err) { console.log('errore mic:', err.error); };
-  vRecog.onend = function() {
-    // Safari chiude il mic - salva buffer se c e
-    if (bufferCorrente.trim()) {
-      if (pausaTimer) clearTimeout(pausaTimer);
-      vRisultatiSalvati.push(bufferCorrente.trim());
-      bufferCorrente = '';
-    }
-  };
+  vRecog.onerror = function(err) { console.log('mic err:', err.error); };
+  vRecog.onend = function() {};
 
   try { vRecog.start(); } catch(ex) { console.log('start err:', ex); }
 }
@@ -863,34 +836,100 @@ function vPressStop(e) {
   document.getElementById('vMicBtn').style.background = 'var(--or)';
   document.getElementById('vMicTxt').textContent = '🎙️ Tieni premuto e parla';
 
-  // Usa vRisultatiSalvati (ogni elemento = un articolo)
-  // Se vuoto usa vTestoAccumulato come fallback
-  var lista = vRisultatiSalvati.slice();
-  if (lista.length === 0 && vTestoAccumulato.trim().length > 1) {
-    lista = [vTestoAccumulato.trim()];
+  var testo = vTestoAccumulato.trim();
+  // fallback: usa status se accumulato e vuoto
+  if (!testo) {
+    var stat = document.getElementById('vStat').textContent;
+    if (stat && stat !== 'Parla ora...' && stat.length > 1) testo = stat;
   }
-
-  var aggiunti = 0;
-  lista.forEach(function(art) {
-    var nome = art.trim();
-    if (nome.length > 1) {
-      nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-      vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
-      aggiunti++;
-    }
-  });
 
   vTestoAccumulato = '';
   vRisultatiSalvati = [];
 
-  if (aggiunti > 0) {
+  if (testo && testo.length > 1) {
+    // split intelligente - rispetta parole composte
+    var nomi = vSplitIntelligente(testo);
+    nomi.forEach(function(nome) {
+      if (nome.length > 1) {
+        nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+        vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
+      }
+    });
     vRenderLista();
-    document.getElementById('vStat').textContent =
-      aggiunti === 1 ? '1 articolo aggiunto! Premi ancora o conferma' :
-      aggiunti + ' articoli aggiunti! Premi ancora o conferma';
+    document.getElementById('vStat').textContent = nomi.length + ' articol' + (nomi.length===1?'o':'i') + ' - premi ancora o conferma';
   } else {
-    document.getElementById('vStat').textContent = 'Non ho sentito nulla — riprova!';
+    document.getElementById('vStat').textContent = 'Non ho sentito nulla - riprova!';
   }
+}
+
+// Split intelligente: separa per virgola/e/poi, MA mantiene parole composte note
+function vSplitIntelligente(testo) {
+  var COMPOSTE = [
+    'cibo gatti','cibo gatto','sabbia gatti','sabbia gatto',
+    'cotton fioc','carta igienica','carta forno','carta alluminio',
+    'detersivo lavatrice','detersivo lavastoviglie','detersivo piatti',
+    'acchiappa colore','ammorbidente lavatrice',
+    'prosciutto cotto','prosciutto crudo',
+    'petto pollo','fesa tacchino',
+    'olio oliva','olio girasole',
+    'latte intero','latte parziale','latte scremato',
+    'succo frutta','acqua frizzante','acqua naturale',
+    'fette biscottate','pane cassetta','pane integrale',
+    'yogurt bianco','yogurt greco',
+    'verdure miste','insalata mista',
+    'formaggio grattugiato','parmigiano reggiano',
+    'sacchetti umido','sacchetti spazzatura','sacchetti immondizia','sacchetti freezer',
+    'sacchetti frigo','sacchetti aspirapolvere',
+    'rotolo cucina','rotolo carta','carta cucina',
+    'detersivo piatti','sapone piatti','spugna piatti',
+    'bagnoschiuma doccia','crema mani','crema viso',
+    'dentifricio bambini','spazzolino denti',
+    'pannolini gatto','lettiera gatto',
+    'birra rossa','birra bionda','birra analcolica',
+    'vino rosso','vino bianco','vino rose',
+    'pasta integrale','pasta fresca','pasta ripiena',
+    'riso lungo','riso parboiled','riso integrale',
+    'tonno olio','tonno acqua','tonno naturale',
+    'pomodori pelati','pomodori datterini','passata pomodoro',
+    'olio extravergine','olio extra vergine',
+    'sale grosso','sale fino','sale integrale',
+    'farina integrale','farina manitoba',
+    'burro salato','burro biologico',
+    'uova biologiche','uova fresche',
+    'panna fresca','panna cucina',
+    'mascarpone formaggio','ricotta fresca',
+    'mozzarella bufala','mozzarella fiordilatte',
+    'bresaola manzo','salame milano','mortadella bologna',
+    'prosciutto cotto alta qualita',
+    'brodo vegetale','brodo carne','brodo pollo',
+    'dado brodo','dado vegetale'
+  ];
+
+  // Prima sostituisce le parole composte con placeholder
+  var placeholders = {};
+  var tmp = testo.toLowerCase();
+  COMPOSTE.forEach(function(cp, i) {
+    var ph = '__C' + i + '__';
+    if (tmp.indexOf(cp) !== -1) {
+      tmp = tmp.replace(cp, ph);
+      placeholders[ph] = cp;
+    }
+  });
+
+  // Ora splitta per separatori (virgola, "e", "poi", ecc.)
+  var parti = tmp.split(/[,;.]+|\s+e\s+|\s+poi\s+|\s+anche\s+|\s+ed\s+/)
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s.length > 1; });
+
+  // Ripristina i placeholder
+  parti = parti.map(function(p) {
+    Object.keys(placeholders).forEach(function(ph) {
+      p = p.replace(ph, placeholders[ph]);
+    });
+    return p.trim();
+  });
+
+  return parti.filter(function(s){ return s.length > 1; });
 }
 
 function startVoice() {
