@@ -727,16 +727,11 @@ var vListening = false;
 
 /* Splitta testo in articoli singoli */
 function vSplitTesto(testo) {
+  // Per la tastiera: split su virgola, punto e virgola, "e", "poi"
+  // Lo spazio NON separa (serve per parole composte es. "cibo gatti")
   var pulito = testo.replace(/aggiungi|metti|voglio|serve|compra/gi, '').trim();
-  var hasSep = (pulito.indexOf(',') !== -1 || pulito.indexOf(';') !== -1 ||
-    /e|poi|anche/.test(pulito));
-  var parti;
-  if (hasSep) {
-    parti = pulito.split(/[,;]+|\s+e\s+|\s+poi\s+|\s+anche\s+|\s+ed\s+/);
-  } else {
-    parti = pulito.split(/\s+/);
-  }
-  return parti
+  return pulito
+    .split(/[,;]+|\s+e\s+|\s+poi\s+|\s+anche\s+|\s+ed\s+/)
     .map(function(s){ return s.trim(); })
     .filter(function(s){ return s.length > 1; })
     .map(function(s){ return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); });
@@ -796,6 +791,9 @@ function vPressStart(e) {
   vListening = true;
   vTestoAccumulato = '';
   vRisultatiSalvati = [];
+  var pauseTimer = null;      // timer pausa tra articoli
+  var articoloCorrente = '';  // parole dell articolo in costruzione
+  var PAUSA_MS = 900;         // ms di silenzio = nuovo articolo
 
   document.getElementById('vMicTxt').textContent = '🔴 Rilascia per aggiungere';
   document.getElementById('vMicBtn').style.background = '#8b3a3a';
@@ -812,28 +810,41 @@ function vPressStart(e) {
   vRecog.onresult = function(e) {
     var fin = '', tmp = '';
     for (var i = 0; i < e.results.length; i++) {
-      if (e.results[i].isFinal) {
-        fin += e.results[i][0].transcript + ' ';
-      } else {
-        tmp += e.results[i][0].transcript;
-      }
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
+      else tmp += e.results[i][0].transcript;
     }
-    // Salva subito ogni finale in array globale
+
     if (fin.trim()) {
-      vRisultatiSalvati.push(fin.trim());
-      vTestoAccumulato = vRisultatiSalvati.join(' ');
+      // Hai detto qualcosa di finale — aggiungilo all articolo corrente
+      articoloCorrente += (articoloCorrente ? ' ' : '') + fin.trim();
+      vTestoAccumulato = vRisultatiSalvati.join(', ') + (vRisultatiSalvati.length ? ', ' : '') + articoloCorrente;
+
+      // Reset il timer di pausa
+      if (pauseTimer) clearTimeout(pauseTimer);
+      pauseTimer = setTimeout(function() {
+        // Pausa superata = chiudi articolo corrente e inizia il prossimo
+        if (articoloCorrente.trim()) {
+          vRisultatiSalvati.push(articoloCorrente.trim());
+          articoloCorrente = '';
+          vTestoAccumulato = vRisultatiSalvati.join(', ');
+          document.getElementById('vStat').textContent = vTestoAccumulato;
+        }
+      }, PAUSA_MS);
     }
-    // Mostra tutto
-    var mostra = vTestoAccumulato + (tmp ? ' ' + tmp : '');
-    document.getElementById('vStat').textContent = mostra.trim() || 'Parla ora...';
+
+    // Mostra interim mentre parla
+    var mostra = vTestoAccumulato + (tmp ? (vTestoAccumulato ? ' ' : '') + tmp : '');
+    if (mostra.trim()) document.getElementById('vStat').textContent = mostra.trim();
   };
 
-  vRecog.onerror = function(err) {
-    console.log('Mic error:', err.error);
-  };
-
+  vRecog.onerror = function(err) { console.log('Mic error:', err.error); };
   vRecog.onend = function() {
-    // Safari ha chiuso il mic - non fare nulla, aspetta che l'utente molli il tasto
+    // Safari ha chiuso - salva articolo corrente se c e
+    if (articoloCorrente.trim()) {
+      vRisultatiSalvati.push(articoloCorrente.trim());
+      articoloCorrente = '';
+      vTestoAccumulato = vRisultatiSalvati.join(', ');
+    }
   };
 
   try { vRecog.start(); } catch(ex) { console.log('Start error:', ex); }
@@ -851,25 +862,31 @@ function vPressStop(e) {
   document.getElementById('vMicBtn').style.background = 'var(--or)';
   document.getElementById('vMicTxt').textContent = '🎙️ Tieni premuto e parla';
 
-  // Prendi da vRisultatiSalvati O da vStat come fallback
-  var testo = vTestoAccumulato.trim();
-
-  if (!testo) {
-    // Fallback: prendi il testo mostrato nello status
-    var stat = document.getElementById('vStat').textContent;
-    if (stat && stat !== 'Parla ora...' && stat !== 'Parla ora...' && stat.length > 1) {
-      testo = stat.trim();
+  // Aggiungi ogni articolo di vRisultatiSalvati direttamente (senza split per spazio)
+  var aggiunti = 0;
+  vRisultatiSalvati.forEach(function(art) {
+    var nome = art.trim();
+    if (nome.length > 1) {
+      nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+      vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
+      aggiunti++;
     }
+  });
+
+  // Fallback: se non ci sono risultati usa il testo accumulato
+  if (aggiunti === 0 && vTestoAccumulato.trim().length > 1) {
+    var nome = vTestoAccumulato.trim();
+    nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+    vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
+    aggiunti++;
   }
 
-  console.log('Risultati salvati:', vRisultatiSalvati);
-  console.log('Testo finale:', testo);
+  vTestoAccumulato = '';
+  vRisultatiSalvati = [];
 
-  if (testo && testo.length > 1) {
-    vAggiungiTesto(testo);
-    vTestoAccumulato = '';
-    vRisultatiSalvati = [];
-    document.getElementById('vStat').textContent = 'Aggiunto! Premi ancora o conferma';
+  if (aggiunti > 0) {
+    vRenderLista();
+    document.getElementById('vStat').textContent = aggiunti + ' articol' + (aggiunti===1?'o':'i') + ' aggiunti! Premi ancora o conferma';
   } else {
     document.getElementById('vStat').textContent = 'Non ho sentito nulla — riprova!';
   }
