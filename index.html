@@ -28,12 +28,12 @@ header{
   background:var(--or);
   padding:20px 20px 0;
   border-radius:0 0 28px 28px;
-  position:sticky;top:0;z-index:100;
+  position:fixed;top:0;left:0;right:0;z-index:100;
   box-shadow:0 6px 28px rgba(255,122,47,.3);
 }
-.hdr-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.hdr-top{display:flex;align-items:flex-start;justify-content:flex-start;margin-bottom:14px}
 .logo-eye{font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:4px}
-.logo{font-family:'Lato',sans-serif;font-size:32px;font-weight:700;color:#fff;display:flex;align-items:center;gap:9px;line-height:1.1;letter-spacing:0px}
+.logo{font-family:'Lato',sans-serif;font-size:36px;font-weight:700;color:#fff;display:flex;align-items:center;gap:9px;line-height:1.1;letter-spacing:-0.5px}
 .hdr-btns{display:flex;gap:8px;padding-top:2px}
 .hbtn{width:42px;height:42px;border-radius:14px;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s}
 .hbtn:active{background:rgba(255,255,255,.4)}
@@ -47,7 +47,7 @@ header{
 .prog-fill{height:100%;background:#fff;border-radius:20px;transition:width .45s ease}
 
 /* TABS */
-.tabs-wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 18px 10px;background:var(--wh);position:sticky;top:142px;z-index:90;border-bottom:1.5px solid var(--gr2)}
+.tabs-wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 18px 10px;background:var(--wh);position:fixed;top:142px;left:0;right:0;z-index:90;border-bottom:1.5px solid var(--gr2)}
 .tabs-wrap::-webkit-scrollbar{display:none}
 .tab{flex-shrink:0;padding:8px 14px;border-radius:22px;border:none;font-family:'Lato',sans-serif;font-size:13px;font-weight:600;background:var(--gr2);color:var(--mid);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
 .tab.active{color:#fff}
@@ -58,7 +58,7 @@ header{
 .tab[data-c="Pulizia casa"].active{background:var(--c4);color:#1e002a}
 
 /* CONTENT */
-.content{padding:18px 18px 180px}
+.content{padding:18px 18px 180px;padding-top:210px}
 
 /* CATEGORY */
 .cat-sec{margin-bottom:22px}
@@ -108,14 +108,7 @@ header{
 .empty p{font-size:15px;font-weight:500}
 
 /* BOTTOM BAR - spesa completata */
-.bottom-bar{
-  position:fixed;bottom:0;left:0;right:0;
-  padding:14px 18px 28px;
-  background:linear-gradient(to top,var(--off) 70%,transparent);
-  z-index:120;
-  display:flex;flex-direction:column;gap:10px;
-  align-items:center;
-}
+
 .btn-voice-main{
   width:100%;max-width:480px;
   background:var(--or);color:#fff;border:none;
@@ -224,10 +217,7 @@ header{
       <div class="logo-eye">La tua lista della spesa</div>
       <div class="logo">Spesa <span style="color:rgba(255,255,255,.55);font-weight:400">Migross</span></div>
     </div>
-    <div class="hdr-btns">
-      <button class="hbtn" onclick="openAddModal()" title="Aggiungi manuale">✏️</button>
-      <button class="hbtn" onclick="openSettings()" title="Impostazioni">⚙️</button>
-    </div>
+
   </div>
   <div class="prog-strip">
     <div class="prog-pct" id="progPct">0%</div>
@@ -247,18 +237,47 @@ header{
 <!-- CONTENT -->
 <div class="content" id="content"></div>
 
-<!-- BOTTOM BAR -->
-<div class="bottom-bar">
-  <button class="btn-voice-main" id="btnVoice" onclick="startVoice()">
-    🎙️ Aggiungi con la voce
-  </button>
-  <button class="btn-done-main" onclick="openDoneModal()">
-    ✅ Spesa completata
-  </button>
-  <button class="btn-done-main" onclick="cancellaSpesa()" style="border-color:#c5d5c6;color:#8faa92;font-size:14px;padding:11px">
-    🗑️ Cancella tutti gli articoli
-  </button>
+<!-- FAB MENU BUTTON -->
+<button id="fabBtn" onclick="toggleFabMenu()" style="
+  position:fixed;bottom:28px;right:22px;z-index:200;
+  width:58px;height:58px;border-radius:50%;border:none;
+  background:var(--or);color:#fff;font-size:26px;
+  box-shadow:0 4px 16px rgba(107,143,113,.4);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;
+  -webkit-user-select:none;user-select:none;">
+  ＋
+</button>
+
+<!-- FAB MENU -->
+<div id="fabMenu" style="
+  display:none;position:fixed;bottom:96px;right:16px;z-index:199;
+  display:none;flex-direction:column;gap:10px;align-items:flex-end;">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Aggiungi articoli</span>
+    <button onclick="startVoice();toggleFabMenu()" style="
+      width:58px;height:58px;border-radius:50%;border:none;
+      background:var(--or);color:#fff;font-size:26px;
+      box-shadow:0 3px 14px rgba(107,143,113,.4);cursor:pointer;flex-shrink:0">🎙️</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Spesa completata</span>
+    <button onclick="openDoneModal();toggleFabMenu()" style="
+      width:58px;height:58px;border-radius:50%;border:none;
+      background:#5a9e6e;color:#fff;font-size:26px;
+      box-shadow:0 3px 14px rgba(90,158,110,.4);cursor:pointer;flex-shrink:0">✅</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Cancella tutto</span>
+    <button onclick="cancellaSpesa();toggleFabMenu()" style="
+      width:58px;height:58px;border-radius:50%;border:none;
+      background:#c0392b;color:#fff;font-size:26px;
+      box-shadow:0 3px 14px rgba(192,57,43,.4);cursor:pointer;flex-shrink:0">🗑️</button>
+  </div>
 </div>
+
+<!-- BACKDROP FAB -->
+<div id="fabBackdrop" onclick="toggleFabMenu()" style="display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,0.3)"></div>
 
 <!-- VOICE OVERLAY -->
 <div class="vov" id="vov">
@@ -828,6 +847,18 @@ function closeVov() {
   if (vRecog) { try { vRecog.stop(); } catch(ex) {} vRecog = null; }
   document.getElementById('vov').classList.remove('open');
   vListaItems = [];
+}
+
+/* ─── FAB MENU ───────────────────────────── */
+var fabOpen = false;
+function toggleFabMenu() {
+  fabOpen = !fabOpen;
+  var menu = document.getElementById('fabMenu');
+  var backdrop = document.getElementById('fabBackdrop');
+  var btn = document.getElementById('fabBtn');
+  menu.style.display = fabOpen ? 'flex' : 'none';
+  backdrop.style.display = fabOpen ? 'block' : 'none';
+  btn.style.transform = fabOpen ? 'rotate(45deg)' : 'none';
 }
 
 /* ─── INIT ───────────────────────────────── */
