@@ -534,16 +534,9 @@ function resetAll(){
   }
 }
 
-function cancellaSpesa(){
-  if(confirm('Eliminare TUTTI gli articoli dalla lista? Non si può annullare.')){
-    items=[];
-    save();
-    render();
-  }
-}
 
 function cancellaSpesa(){
-  if(confirm('Eliminare TUTTI gli articoli? Non si può annullare.')){
+  if(confirm('Eliminare TUTTI gli articoli? Non si puo annullare.')){
     items=[];save();render();
   }
 }
@@ -624,8 +617,7 @@ function toggleMic(){
 }
 
 function startMic(){
-  if(!SR){alert('Riconoscimento vocale non disponibile.
-Usa Safari su iPhone.');return;}
+  if(!SR){alert('Riconoscimento vocale non disponibile. Usa Safari su iPhone.');return;}
   allFinals='';
   document.getElementById('vWaves').style.display='flex';
   document.getElementById('vText').style.display='';
