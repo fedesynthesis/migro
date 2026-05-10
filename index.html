@@ -32,8 +32,8 @@ header{
   box-shadow:0 6px 28px rgba(255,122,47,.3);
 }
 .hdr-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
-.logo-eye{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:3px}
-.logo{font-family:'Libre Baskerville',serif;font-size:30px;font-weight:900;color:#fff;display:flex;align-items:center;gap:9px;line-height:1}
+.logo-eye{font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:4px}
+.logo{font-family:'Libre Baskerville',serif;font-size:32px;font-weight:700;color:#fff;display:flex;align-items:center;gap:9px;line-height:1.1;letter-spacing:-0.5px}
 .hdr-btns{display:flex;gap:8px;padding-top:2px}
 .hbtn{width:42px;height:42px;border-radius:14px;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s}
 .hbtn:active{background:rgba(255,255,255,.4)}
@@ -221,8 +221,8 @@ header{
 <header>
   <div class="hdr-top">
     <div>
-      <div class="logo-eye">La tua lista</div>
-      <div class="logo">🛒 Spesa Migross</div>
+      <div class="logo-eye">La tua lista della spesa</div>
+      <div class="logo">Spesa <span style="color:rgba(255,255,255,.55);font-weight:400">Migross</span></div>
     </div>
     <div class="hdr-btns">
       <button class="hbtn" onclick="openAddModal()" title="Aggiungi manuale">✏️</button>
@@ -845,31 +845,6 @@ render();
 })();
 </script>
 
-<!-- INSTALL BANNER (solo se non già installata) -->
-<div id="installBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:#2A1500;color:#fff;padding:14px 18px;font-family:'Lato',sans-serif;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.3)">
-  <span style="font-size:22px">🛒</span>
-  <div style="flex:1">
-    <div style="font-weight:700;font-size:14px">Aggiungi alla schermata Home</div>
-    <div style="opacity:.7;margin-top:2px">Tocca <strong>Condividi</strong> → <strong>Aggiungi a Home</strong></div>
-  </div>
-  <button onclick="document.getElementById('installBanner').style.display='none'" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">✕</button>
-</div>
-<script>
-// Mostra banner solo su iOS Safari quando non è standalone
-(function(){
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone === true;
-  if(isIOS && isSafari && !isStandalone){
-    const shown = sessionStorage.getItem('installShown');
-    if(!shown){
-      setTimeout(()=>{
-        document.getElementById('installBanner').style.display='flex';
-        sessionStorage.setItem('installShown','1');
-      }, 800);
-    }
-  }
-})();
-</script>
+
 </body>
 </html>
