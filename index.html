@@ -280,6 +280,13 @@ header{
       background:#c0392b;color:#fff;font-size:26px;
       box-shadow:0 3px 14px rgba(192,57,43,.4);cursor:pointer;flex-shrink:0">🗑️</button>
   </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Reminder spesa</span>
+    <button onclick="openReminderModal();toggleFabMenu()" style="
+      width:58px;height:58px;border-radius:50%;border:none;
+      background:#7898C8;color:#fff;font-size:26px;
+      box-shadow:0 3px 14px rgba(120,152,200,.4);cursor:pointer;flex-shrink:0">🔔</button>
+  </div>
 </div>
 
 <!-- BACKDROP FAB -->
@@ -920,6 +927,117 @@ function toggleFabMenu() {
   btn.style.transform = fabOpen ? 'rotate(45deg)' : 'none';
 }
 
+/* ─── REMINDER ───────────────────────────── */
+function openReminderModal() {
+  // Load saved settings
+  var saved = JSON.parse(localStorage.getItem('migross_reminder') || 'null');
+  if (saved) {
+    document.getElementById('remDay').value = saved.day;
+    document.getElementById('remTime').value = saved.time;
+  }
+  // Check notification permission status
+  var status = document.getElementById('remNotifStatus');
+  if ('Notification' in window) {
+    var perm = Notification.permission;
+    status.style.display = '';
+    if (perm === 'granted') {
+      status.textContent = '✅ Notifiche abilitate — riceverai avvisi anche con app chiusa';
+      status.style.color = '#5a9e6e';
+    } else if (perm === 'denied') {
+      status.textContent = '⚠️ Notifiche bloccate — abilita da Impostazioni > Safari > Notifiche';
+      status.style.color = '#c0392b';
+    } else {
+      status.textContent = '💡 Premi Salva per abilitare le notifiche';
+      status.style.color = 'var(--gr)';
+    }
+  }
+  document.getElementById('reminderModal').classList.add('open');
+}
+
+function salvaReminder() {
+  var day = parseInt(document.getElementById('remDay').value);
+  var time = document.getElementById('remTime').value;
+  var reminder = { day: day, time: time, active: true };
+  localStorage.setItem('migross_reminder', JSON.stringify(reminder));
+
+  // Request notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(function(perm) {
+      if (perm === 'granted') {
+        scheduleNotification(reminder);
+      }
+    });
+  } else if (Notification.permission === 'granted') {
+    scheduleNotification(reminder);
+  }
+
+  closeModal('reminderModal');
+  alert('Reminder salvato per ' + ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][day] + ' alle ' + time + '!');
+}
+
+function cancellaReminder() {
+  localStorage.removeItem('migross_reminder');
+  closeModal('reminderModal');
+  alert('Reminder rimosso.');
+}
+
+function scheduleNotification(reminder) {
+  // Calculate ms until next occurrence
+  var now = new Date();
+  var parts = reminder.time.split(':');
+  var target = new Date();
+  target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+
+  // Find next occurrence of the right day
+  var daysUntil = (reminder.day - now.getDay() + 7) % 7;
+  if (daysUntil === 0 && now > target) daysUntil = 7;
+  target.setDate(target.getDate() + daysUntil);
+
+  var msUntil = target - now;
+  if (msUntil > 0 && msUntil < 7 * 24 * 60 * 60 * 1000) {
+    setTimeout(function() {
+      new Notification('🛒 Spesa Migross', {
+        body: 'Oggi è giorno di spesa! La tua lista è pronta.',
+        icon: document.querySelector('link[rel="apple-touch-icon"]').href
+      });
+    }, msUntil);
+  }
+}
+
+function checkReminder() {
+  var saved = JSON.parse(localStorage.getItem('migross_reminder') || 'null');
+  if (!saved || !saved.active) return;
+
+  var now = new Date();
+  var parts = saved.time.split(':');
+  var targetHour = parseInt(parts[0]);
+  var targetMin = parseInt(parts[1]);
+
+  var isRightDay = now.getDay() === parseInt(saved.day);
+  var isRightTime = now.getHours() >= targetHour &&
+    (now.getHours() > targetHour || now.getMinutes() >= targetMin) &&
+    now.getHours() < targetHour + 3; // finestra di 3 ore
+
+  if (isRightDay && isRightTime) {
+    var lastShown = localStorage.getItem('migross_reminder_shown');
+    var today = now.toDateString();
+    if (lastShown !== today) {
+      document.getElementById('reminderBanner').style.display = '';
+      localStorage.setItem('migross_reminder_shown', today);
+      // Auto-hide after 8 seconds
+      setTimeout(function() {
+        var b = document.getElementById('reminderBanner');
+        if (b) b.style.display = 'none';
+      }, 8000);
+    }
+  }
+
+  // Schedule notification if permission granted
+  if (Notification.permission === 'granted') {
+    scheduleNotification(saved);
+  }
+}
+
 /* ─── LAYOUT FIX ─────────────────────────── */
 function fixLayout() {
   var hdr = document.querySelector('header');
@@ -937,6 +1055,7 @@ window.addEventListener('resize', fixLayout);
 /* ─── INIT ───────────────────────────────── */
 load();
 render();
+checkReminder();
 </script>
 
 <script>
@@ -971,5 +1090,63 @@ render();
 </script>
 
 
+
+<!-- REMINDER MODAL -->
+<div class="modal-bg" id="reminderModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔔 Reminder spesa</div>
+    <div style="font-size:14px;color:var(--gr);margin-bottom:20px">Scegli giorno e ora — ti avvisiamo noi!</div>
+
+    <div class="m-row">
+      <div class="m-lbl">Giorno della settimana</div>
+      <select class="m-inp" id="remDay">
+        <option value="0">Domenica</option>
+        <option value="1">Lunedì</option>
+        <option value="2">Martedì</option>
+        <option value="3">Mercoledì</option>
+        <option value="4">Giovedì</option>
+        <option value="5">Venerdì</option>
+        <option value="6" selected>Sabato</option>
+      </select>
+    </div>
+    <div class="m-row">
+      <div class="m-lbl">Orario</div>
+      <input class="m-inp" type="time" id="remTime" value="09:00"/>
+    </div>
+
+    <div id="remNotifStatus" style="font-size:13px;color:var(--gr);margin-bottom:16px;padding:10px;background:var(--off);border-radius:10px;display:none"></div>
+
+    <div class="m-btns">
+      <button class="btn-cancel" onclick="closeModal('reminderModal')">Annulla</button>
+      <button class="btn-confirm" onclick="salvaReminder()">💾 Salva reminder</button>
+    </div>
+    <button class="btn-danger" style="margin-top:10px" onclick="cancellaReminder()">🗑️ Rimuovi reminder</button>
+  </div>
+</div>
+
+<!-- REMINDER BANNER -->
+<div id="reminderBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;
+  background:linear-gradient(135deg,#5a9e6e,#3d7a52);color:#fff;
+  padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.3);
+  font-family:'Lato',sans-serif;animation:slideDown .4s ease">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="font-size:36px">🛒</div>
+    <div style="flex:1">
+      <div style="font-size:17px;font-weight:700">Oggi è giorno di spesa!</div>
+      <div style="font-size:13px;opacity:.85;margin-top:2px">La tua lista è pronta</div>
+    </div>
+    <button onclick="document.getElementById('reminderBanner').style.display='none'"
+      style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:10px;
+      padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer">✕</button>
+  </div>
+</div>
+
+<style>
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+</style>
 </body>
 </html>
