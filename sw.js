@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross v4
-const CACHE_NAME = 'migross-v17';
+const CACHE_NAME = 'migross-v18';
 const URLS_TO_CACHE = [
   './',
   './index.html'
