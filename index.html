@@ -256,9 +256,7 @@ header{
 </button>
 
 <!-- FAB MENU -->
-<div id="fabMenu" style="
-  display:none;position:fixed;bottom:96px;right:16px;z-index:199;
-  display:none;flex-direction:column;gap:10px;align-items:flex-end;">
+<div id="fabMenu" style="position:fixed;bottom:96px;right:16px;z-index:199;flex-direction:column;gap:10px;align-items:flex-end;display:none">
   <div style="display:flex;align-items:center;gap:12px">
     <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Aggiungi articoli</span>
     <button onclick="startVoice();toggleFabMenu()" style="
@@ -1254,17 +1252,83 @@ function aggiungiCategoria() {
   alert(emoji + ' ' + nome + ' aggiunta!');
 }
 
+var editingCatName = '';
+
 function editCatKeywords(catName) {
+  editingCatName = catName;
   var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
   var current = (extraKw[catName]||[]).join(', ');
-  var input = prompt('Parole chiave per "' + catName + '" (es: pomodorini, cherry):', current);
-  if (input === null) return;
-  var kw = input.split(',').map(function(k){ return k.trim().toLowerCase(); }).filter(function(k){ return k.length>0; });
-  extraKw[catName] = kw;
-  localStorage.setItem('migross_extra_kw', JSON.stringify(extraKw));
-  renderCatManagerLists();
-  alert('Parole chiave salvate per ' + catName + '!');
+  document.getElementById('kwModalTitle').textContent = catName;
+  document.getElementById('kwInput').value = current;
+  document.getElementById('kwModal').classList.add('open');
 }
+
+function salvaKeywords() {
+  var val = document.getElementById('kwInput').value.trim();
+  var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
+  var kw = val.split(',').map(function(k){ return k.trim().toLowerCase(); }).filter(function(k){ return k.length>0; });
+  extraKw[editingCatName] = kw;
+  localStorage.setItem('migross_extra_kw', JSON.stringify(extraKw));
+  closeModal('kwModal');
+  renderCatManagerLists();
+}
+
+var kwRecog = null;
+var kwListening = false;
+
+function kwPressStart(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (kwListening) return;
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    alert('Microfono non disponibile. Usa Safari.');
+    return;
+  }
+  kwListening = true;
+  var btn = document.getElementById('kwVoiceBtn');
+  btn.textContent = '🔴 Rilascia per aggiungere';
+  btn.style.background = '#8b3a3a';
+  var SR2 = window.SpeechRecognition || window.webkitSpeechRecognition;
+  kwRecog = new SR2();
+  kwRecog.lang = 'it-IT';
+  kwRecog.continuous = true;
+  kwRecog.interimResults = true;
+  var kwAccumulato = '';
+  kwRecog.onresult = function(e) {
+    var fin = '', tmp = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
+      else tmp += e.results[i][0].transcript;
+    }
+    if (fin) kwAccumulato += fin;
+    btn.textContent = '🔴 ' + (kwAccumulato + tmp).trim();
+    kwRecog._acc = kwAccumulato;
+  };
+  kwRecog.onerror = function() { kwPressStop(e); };
+  kwRecog.onend = function() {
+    if (kwListening) kwPressStop(e);
+  };
+  try { kwRecog.start(); } catch(ex) {}
+}
+
+function kwPressStop(e) {
+  if (e) { try { e.preventDefault(); e.stopPropagation(); } catch(ex) {} }
+  if (!kwListening) return;
+  kwListening = false;
+  var acc = (kwRecog && kwRecog._acc) ? kwRecog._acc : '';
+  if (kwRecog) { try { kwRecog.stop(); } catch(ex) {} kwRecog = null; }
+  var btn = document.getElementById('kwVoiceBtn');
+  btn.textContent = '🎙️ Tieni premuto e parla';
+  btn.style.background = 'var(--or)';
+  if (acc.trim()) {
+    var inp = document.getElementById('kwInput');
+    // Aggiunge le parole come keyword separate da virgola
+    var nuove = acc.trim().split(/\s+/).join(', ');
+    inp.value = (inp.value ? inp.value + ', ' : '') + nuove;
+  }
+}
+
+function startKwVoice() {} // legacy - non usato
 
 function eliminaCategoria(idx) {
   var custom = loadCustomCats();
@@ -1445,6 +1509,31 @@ checkReminder();
 
     <div style="margin-top:20px">
       <button class="btn-cancel" style="width:100%" onclick="closeModal('catManagerModal')">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEYWORD MODAL -->
+<div class="modal-bg" id="kwModal" onclick="if(event.target===this)closeModal('kwModal')">
+  <div class="modal">
+    <div class="modal-handle" onclick="closeModal('kwModal')" style="cursor:pointer;padding:8px 0"></div>
+    <div class="modal-title">✏️ Parole chiave per</div>
+    <div id="kwModalTitle" style="font-family:'Lato',sans-serif;font-size:18px;font-weight:700;color:var(--or);margin-bottom:14px"></div>
+    <div style="font-size:13px;color:var(--gr);margin-bottom:12px">Aggiungi esempi di articoli — separate da virgola.<br>Il riconoscimento vocale le userà automaticamente.</div>
+    <textarea id="kwInput" class="m-inp" rows="3" placeholder="es. pomodorini, cherry, datterini, insalata..."
+      style="resize:none;font-size:14px;padding:12px;margin-bottom:10px;width:100%"></textarea>
+    <div id="kwVoiceBtn"
+      onmousedown="kwPressStart(event)" onmouseup="kwPressStop(event)" onmouseleave="kwPressStop(event)"
+      ontouchstart="kwPressStart(event)" ontouchend="kwPressStop(event)" ontouchcancel="kwPressStop(event)"
+      style="width:100%;background:var(--or);color:#fff;border-radius:14px;
+      padding:14px;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;
+      cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;
+      user-select:none;-webkit-user-select:none;touch-action:none">
+      🎙️ Tieni premuto e parla
+    </div>
+    <div class="m-btns">
+      <button class="btn-cancel" onclick="closeModal('kwModal')">Annulla</button>
+      <button class="btn-confirm" onclick="salvaKeywords()">💾 Salva</button>
     </div>
   </div>
 </div>
