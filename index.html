@@ -1287,6 +1287,92 @@ function eliminaCategoria(idx) {
   render();
 }
 
+/* ─── REMINDER ───────────────────────────── */
+function openReminderModal() {
+  var saved = JSON.parse(localStorage.getItem('migross_reminder') || 'null');
+  if (saved) {
+    document.getElementById('remDay').value = saved.day;
+    document.getElementById('remTime').value = saved.time;
+  }
+  var status = document.getElementById('remNotifStatus');
+  if ('Notification' in window) {
+    var perm = Notification.permission;
+    status.style.display = '';
+    if (perm === 'granted') {
+      status.textContent = 'Notifiche abilitate';
+      status.style.color = '#5a9e6e';
+    } else if (perm === 'denied') {
+      status.textContent = 'Notifiche bloccate - abilita da Impostazioni Safari';
+      status.style.color = '#c0392b';
+    } else {
+      status.textContent = 'Premi Salva per abilitare le notifiche';
+      status.style.color = 'var(--gr)';
+    }
+  }
+  document.getElementById('reminderModal').classList.add('open');
+}
+
+function salvaReminder() {
+  var day = parseInt(document.getElementById('remDay').value);
+  var time = document.getElementById('remTime').value;
+  var reminder = { day: day, time: time, active: true };
+  localStorage.setItem('migross_reminder', JSON.stringify(reminder));
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  closeModal('reminderModal');
+  alert('Reminder salvato per ' + ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][day] + ' alle ' + time + '!');
+}
+
+function cancellaReminder() {
+  localStorage.removeItem('migross_reminder');
+  closeModal('reminderModal');
+  alert('Reminder rimosso.');
+}
+
+function scheduleNotification(reminder) {
+  if (Notification.permission !== 'granted') return;
+  var now = new Date();
+  var parts = reminder.time.split(':');
+  var target = new Date();
+  target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+  var daysUntil = (reminder.day - now.getDay() + 7) % 7;
+  if (daysUntil === 0 && now > target) daysUntil = 7;
+  target.setDate(target.getDate() + daysUntil);
+  var msUntil = target - now;
+  if (msUntil > 0 && msUntil < 7 * 24 * 60 * 60 * 1000) {
+    setTimeout(function() {
+      new Notification('Spesa Migross', { body: 'Oggi e giorno di spesa! La tua lista e pronta.' });
+    }, msUntil);
+  }
+}
+
+function checkReminder() {
+  var saved = JSON.parse(localStorage.getItem('migross_reminder') || 'null');
+  if (!saved || !saved.active) return;
+  var now = new Date();
+  var parts = saved.time.split(':');
+  var targetHour = parseInt(parts[0]);
+  var targetMin = parseInt(parts[1]);
+  var isRightDay = now.getDay() === parseInt(saved.day);
+  var isRightTime = now.getHours() >= targetHour &&
+    (now.getHours() > targetHour || now.getMinutes() >= targetMin) &&
+    now.getHours() < targetHour + 3;
+  if (isRightDay && isRightTime) {
+    var lastShown = localStorage.getItem('migross_reminder_shown');
+    var today = now.toDateString();
+    if (lastShown !== today) {
+      document.getElementById('reminderBanner').style.display = '';
+      localStorage.setItem('migross_reminder_shown', today);
+      setTimeout(function() {
+        var b = document.getElementById('reminderBanner');
+        if (b) b.style.display = 'none';
+      }, 8000);
+    }
+  }
+  if (Notification.permission === 'granted') scheduleNotification(saved);
+}
+
 /* ─── LAYOUT FIX ─────────────────────────── */
 function fixLayout() {
   var hdr = document.querySelector('header');
