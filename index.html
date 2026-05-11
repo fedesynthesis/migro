@@ -243,60 +243,48 @@ header{
 <!-- CONTENT -->
 <div class="content" id="content"></div>
 
-<!-- FAB MENU BUTTON -->
-<button id="fabBtn" onclick="toggleFabMenu()" style="
-  position:fixed;bottom:28px;right:22px;z-index:501;
-  width:58px;height:58px;border-radius:50%;border:none;
-  background:var(--or);color:#fff;font-size:26px;
-  box-shadow:0 4px 16px rgba(107,143,113,.4);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .2s;
-  -webkit-user-select:none;user-select:none;">
-  ＋
-</button>
+<!-- FAB BUTTON + MENU -->
+<div id="fabRoot" style="position:fixed;bottom:24px;right:18px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:12px">
 
-<!-- FAB MENU -->
-<div id="fabMenu" style="position:fixed;bottom:96px;right:16px;z-index:500;flex-direction:column;gap:10px;align-items:flex-end;display:none">
-  <div style="display:flex;align-items:center;gap:12px">
-    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Aggiungi articoli</span>
-    <button onclick="startVoice();toggleFabMenu()" style="
-      width:58px;height:58px;border-radius:50%;border:none;
-      background:var(--or);color:#fff;font-size:26px;
-      box-shadow:0 3px 14px rgba(107,143,113,.4);cursor:pointer;flex-shrink:0">🎙️</button>
+  <!-- MENU VOCI (nascoste di default) -->
+  <div id="fabMenu" style="display:none;flex-direction:column;gap:10px;align-items:flex-end">
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Aggiungi articoli</span>
+      <button id="fabVoice" style="width:54px;height:54px;border-radius:50%;border:none;background:#6B8F71;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🎙️</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Spesa completata</span>
+      <button id="fabDone" style="width:54px;height:54px;border-radius:50%;border:none;background:#5a9e6e;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">✅</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Cancella tutto</span>
+      <button id="fabClear" style="width:54px;height:54px;border-radius:50%;border:none;background:#c0392b;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🗑️</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Reminder spesa</span>
+      <button id="fabReminder" style="width:54px;height:54px;border-radius:50%;border:none;background:#7898C8;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🔔</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Gestisci categorie</span>
+      <button id="fabCats" style="width:54px;height:54px;border-radius:50%;border:none;background:#8B6BAE;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🗂️</button>
+    </div>
+
   </div>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Spesa completata</span>
-    <button onclick="openDoneModal();toggleFabMenu()" style="
-      width:58px;height:58px;border-radius:50%;border:none;
-      background:#5a9e6e;color:#fff;font-size:26px;
-      box-shadow:0 3px 14px rgba(90,158,110,.4);cursor:pointer;flex-shrink:0">✅</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Cancella tutto</span>
-    <button onclick="cancellaSpesa();toggleFabMenu()" style="
-      width:58px;height:58px;border-radius:50%;border:none;
-      background:#c0392b;color:#fff;font-size:26px;
-      box-shadow:0 3px 14px rgba(192,57,43,.4);cursor:pointer;flex-shrink:0">🗑️</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Reminder spesa</span>
-    <button onclick="openReminderModal();toggleFabMenu()" style="
-      width:58px;height:58px;border-radius:50%;border:none;
-      background:#7898C8;color:#fff;font-size:26px;
-      box-shadow:0 3px 14px rgba(120,152,200,.4);cursor:pointer;flex-shrink:0">🔔</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Gestisci categorie</span>
-    <button onclick="openCatManager();toggleFabMenu()" style="
-      width:58px;height:58px;border-radius:50%;border:none;
-      background:#8B6BAE;color:#fff;font-size:26px;
-      box-shadow:0 3px 14px rgba(139,107,174,.4);cursor:pointer;flex-shrink:0">🗂️</button>
-  </div>
+
+  <!-- TASTO + -->
+  <button id="fabBtn" style="width:60px;height:60px;border-radius:50%;border:none;background:#6B8F71;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);transition:transform .2s">＋</button>
+
 </div>
 
-<!-- BACKDROP FAB -->
-<div id="fabBackdrop" onclick="toggleFabMenu()" style="display:none;position:fixed;inset:0;z-index:499;background:transparent"></div>
+<!-- OVERLAY CHIUDI -->
+<div id="fabOverlay" style="display:none;position:fixed;inset:0;z-index:9998" id="fabOverlay"></div>
 
+<!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <div class="vov" id="vov">
   <div class="vcard" style="padding-bottom:36px">
@@ -1025,15 +1013,35 @@ function closeVov() {
 }
 
 /* ─── FAB MENU ───────────────────────────── */
-var fabOpen = false;
-function toggleFabMenu() {
-  fabOpen = !fabOpen;
-  var menu = document.getElementById('fabMenu');
-  var backdrop = document.getElementById('fabBackdrop');
+function initFab() {
   var btn = document.getElementById('fabBtn');
-  menu.style.display = fabOpen ? 'flex' : 'none';
-  backdrop.style.display = fabOpen ? 'block' : 'none';
-  btn.style.transform = fabOpen ? 'rotate(45deg)' : 'none';
+  var menu = document.getElementById('fabMenu');
+  var overlay = document.getElementById('fabOverlay');
+
+  function openFab() {
+    menu.style.display = 'flex';
+    overlay.style.display = 'block';
+    btn.style.transform = 'rotate(45deg)';
+    btn.style.background = '#2A1500';
+  }
+  function closeFab() {
+    menu.style.display = 'none';
+    overlay.style.display = 'none';
+    btn.style.transform = 'none';
+    btn.style.background = '#6B8F71';
+  }
+  function toggleFab() {
+    if (menu.style.display === 'flex') closeFab(); else openFab();
+  }
+
+  btn.addEventListener('click', function(e){ e.stopPropagation(); toggleFab(); });
+  overlay.addEventListener('click', closeFab);
+
+  document.getElementById('fabVoice').addEventListener('click', function(){ closeFab(); startVoice(); });
+  document.getElementById('fabDone').addEventListener('click', function(){ closeFab(); openDoneModal(); });
+  document.getElementById('fabClear').addEventListener('click', function(){ closeFab(); cancellaSpesa(); });
+  document.getElementById('fabReminder').addEventListener('click', function(){ closeFab(); openReminderModal(); });
+  document.getElementById('fabCats').addEventListener('click', function(){ closeFab(); openCatManager(); });
 }
 
 /* ─── REMINDER ───────────────────────────── */
@@ -1360,6 +1368,7 @@ load();
 refreshCatsWithCustom();
 render();
 checkReminder();
+initFab();
 </script>
 
 <script>
