@@ -245,47 +245,41 @@ header{
 
 <!-- FAB BUTTON + MENU -->
 <style>
-#fabMenu { display:none; }
-#fabMenu.aperto { display:flex; }
+.fab-item { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.fab-item span { background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap; }
+.fab-circle { width:54px;height:54px;border-radius:50%;color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);border:none;flex-shrink:0; }
+#fabWrap { position:fixed;bottom:24px;right:18px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end; }
+#fabMenuItems { display:none;flex-direction:column;align-items:flex-end;margin-bottom:10px; }
+#fabOpen { width:60px;height:60px;border-radius:50%;background:#6B8F71;color:#fff;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center; }
 </style>
 
-<div style="position:fixed;bottom:24px;right:18px;z-index:9999">
-
-  <!-- MENU -->
-  <div id="fabMenu" style="flex-direction:column;gap:10px;align-items:flex-end;margin-bottom:12px">
-
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Aggiungi articoli</span>
-      <div id="fabVoice" style="width:54px;height:54px;border-radius:50%;background:#6B8F71;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🎙️</div>
+<div id="fabWrap">
+  <div id="fabMenuItems">
+    <div class="fab-item">
+      <span>Aggiungi articoli</span>
+      <button class="fab-circle" id="f1" style="background:#6B8F71">🎙️</button>
     </div>
-
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Spesa completata</span>
-      <div id="fabDone" style="width:54px;height:54px;border-radius:50%;background:#5a9e6e;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">✅</div>
+    <div class="fab-item">
+      <span>Spesa completata</span>
+      <button class="fab-circle" id="f2" style="background:#5a9e6e">✅</button>
     </div>
-
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Cancella tutto</span>
-      <div id="fabClear" style="width:54px;height:54px;border-radius:50%;background:#c0392b;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🗑️</div>
+    <div class="fab-item">
+      <span>Cancella tutto</span>
+      <button class="fab-circle" id="f3" style="background:#c0392b">🗑️</button>
     </div>
-
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Reminder spesa</span>
-      <div id="fabReminder" style="width:54px;height:54px;border-radius:50%;background:#7898C8;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🔔</div>
+    <div class="fab-item">
+      <span>Reminder spesa</span>
+      <button class="fab-circle" id="f4" style="background:#7898C8">🔔</button>
     </div>
-
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Gestisci categorie</span>
-      <div id="fabCats" style="width:54px;height:54px;border-radius:50%;background:#8B6BAE;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🗂️</div>
+    <div class="fab-item">
+      <span>Gestisci categorie</span>
+      <button class="fab-circle" id="f5" style="background:#8B6BAE">🗂️</button>
     </div>
-
   </div>
-
-  <!-- TASTO + -->
-  <div id="fabBtn" style="width:60px;height:60px;border-radius:50%;background:#6B8F71;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;transition:transform .2s,background .2s">＋</div>
-
+  <button id="fabOpen">＋</button>
 </div>
 
+<!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
@@ -1019,60 +1013,32 @@ function closeVov() {
 
 /* ─── FAB MENU ───────────────────────────── */
 function initFab() {
-  var fabBtn = document.getElementById('fabBtn');
-  var fabMenu = document.getElementById('fabMenu');
-  var isOpen = false;
+  var open = false;
+  var menu = document.getElementById('fabMenuItems');
+  var btn = document.getElementById('fabOpen');
 
-  function apri() {
-    fabMenu.classList.add('aperto');
-    fabBtn.style.transform = 'rotate(45deg)';
-    fabBtn.style.background = '#2A1500';
-    isOpen = true;
-  }
+  btn.addEventListener('click', function() {
+    open = !open;
+    menu.style.display = open ? 'flex' : 'none';
+    btn.textContent = open ? '✕' : '＋';
+    btn.style.background = open ? '#2A1500' : '#6B8F71';
+  });
+
   function chiudi() {
-    fabMenu.classList.remove('aperto');
-    fabBtn.style.transform = 'none';
-    fabBtn.style.background = '#6B8F71';
-    isOpen = false;
+    open = false;
+    menu.style.display = 'none';
+    btn.textContent = '＋';
+    btn.style.background = '#6B8F71';
   }
 
-  fabBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    if (isOpen) chiudi(); else apri();
-  });
+  document.getElementById('f1').addEventListener('click', function() { chiudi(); setTimeout(startVoice, 150); });
+  document.getElementById('f2').addEventListener('click', function() { chiudi(); setTimeout(openDoneModal, 150); });
+  document.getElementById('f3').addEventListener('click', function() { chiudi(); setTimeout(cancellaSpesa, 150); });
+  document.getElementById('f4').addEventListener('click', function() { chiudi(); setTimeout(openReminderModal, 150); });
+  document.getElementById('f5').addEventListener('click', function() { chiudi(); setTimeout(openCatManager, 150); });
 
-  // Chiudi toccando fuori
   document.addEventListener('click', function(e) {
-    if (isOpen && !e.target.closest('#fabBtn') && !e.target.closest('#fabMenu')) {
-      chiudi();
-    }
-  });
-
-  // Collega i tasti del menu
-  document.getElementById('fabVoice').addEventListener('click', function(e) {
-    e.stopPropagation();
-    chiudi();
-    setTimeout(function(){ startVoice(); }, 100);
-  });
-  document.getElementById('fabDone').addEventListener('click', function(e) {
-    e.stopPropagation();
-    chiudi();
-    setTimeout(function(){ openDoneModal(); }, 100);
-  });
-  document.getElementById('fabClear').addEventListener('click', function(e) {
-    e.stopPropagation();
-    chiudi();
-    setTimeout(function(){ cancellaSpesa(); }, 100);
-  });
-  document.getElementById('fabReminder').addEventListener('click', function(e) {
-    e.stopPropagation();
-    chiudi();
-    setTimeout(function(){ openReminderModal(); }, 100);
-  });
-  document.getElementById('fabCats').addEventListener('click', function(e) {
-    e.stopPropagation();
-    chiudi();
-    setTimeout(function(){ openCatManager(); }, 100);
+    if (open && !document.getElementById('fabWrap').contains(e.target)) chiudi();
   });
 }
 
