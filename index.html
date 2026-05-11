@@ -244,46 +244,49 @@ header{
 <div class="content" id="content"></div>
 
 <!-- FAB BUTTON + MENU -->
-<div id="fabRoot" style="position:fixed;bottom:24px;right:18px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:12px">
+<style>
+#fabMenu { display:none; }
+#fabMenu.aperto { display:flex; }
+</style>
 
-  <!-- MENU VOCI (nascoste di default) -->
-  <div id="fabMenu" style="display:none;flex-direction:column;gap:10px;align-items:flex-end">
+<div style="position:fixed;bottom:24px;right:18px;z-index:9999">
+
+  <!-- MENU -->
+  <div id="fabMenu" style="flex-direction:column;gap:10px;align-items:flex-end;margin-bottom:12px">
 
     <div style="display:flex;align-items:center;gap:10px">
       <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Aggiungi articoli</span>
-      <button id="fabVoice" style="width:54px;height:54px;border-radius:50%;border:none;background:#6B8F71;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🎙️</button>
+      <div id="fabVoice" style="width:54px;height:54px;border-radius:50%;background:#6B8F71;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🎙️</div>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px">
       <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Spesa completata</span>
-      <button id="fabDone" style="width:54px;height:54px;border-radius:50%;border:none;background:#5a9e6e;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">✅</button>
+      <div id="fabDone" style="width:54px;height:54px;border-radius:50%;background:#5a9e6e;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">✅</div>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px">
       <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Cancella tutto</span>
-      <button id="fabClear" style="width:54px;height:54px;border-radius:50%;border:none;background:#c0392b;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🗑️</button>
+      <div id="fabClear" style="width:54px;height:54px;border-radius:50%;background:#c0392b;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🗑️</div>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px">
       <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Reminder spesa</span>
-      <button id="fabReminder" style="width:54px;height:54px;border-radius:50%;border:none;background:#7898C8;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🔔</button>
+      <div id="fabReminder" style="width:54px;height:54px;border-radius:50%;background:#7898C8;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🔔</div>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px">
       <span style="background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;font-family:Lato,sans-serif;white-space:nowrap">Gestisci categorie</span>
-      <button id="fabCats" style="width:54px;height:54px;border-radius:50%;border:none;background:#8B6BAE;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25)">🗂️</button>
+      <div id="fabCats" style="width:54px;height:54px;border-radius:50%;background:#8B6BAE;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">🗂️</div>
     </div>
 
   </div>
 
   <!-- TASTO + -->
-  <button id="fabBtn" style="width:60px;height:60px;border-radius:50%;border:none;background:#6B8F71;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);transition:transform .2s">＋</button>
+  <div id="fabBtn" style="width:60px;height:60px;border-radius:50%;background:#6B8F71;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;transition:transform .2s,background .2s">＋</div>
 
 </div>
 
-<!-- OVERLAY CHIUDI -->
-<div id="fabOverlay" style="display:none;position:fixed;inset:0;z-index:9998" id="fabOverlay"></div>
-
+<!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <div class="vov" id="vov">
@@ -1016,145 +1019,61 @@ function closeVov() {
 
 /* ─── FAB MENU ───────────────────────────── */
 function initFab() {
-  var btn = document.getElementById('fabBtn');
-  var menu = document.getElementById('fabMenu');
-  var overlay = document.getElementById('fabOverlay');
+  var fabBtn = document.getElementById('fabBtn');
+  var fabMenu = document.getElementById('fabMenu');
+  var isOpen = false;
 
-  function openFab() {
-    menu.style.display = 'flex';
-    overlay.style.display = 'block';
-    btn.style.transform = 'rotate(45deg)';
-    btn.style.background = '#2A1500';
+  function apri() {
+    fabMenu.classList.add('aperto');
+    fabBtn.style.transform = 'rotate(45deg)';
+    fabBtn.style.background = '#2A1500';
+    isOpen = true;
   }
-  function closeFab() {
-    menu.style.display = 'none';
-    overlay.style.display = 'none';
-    btn.style.transform = 'none';
-    btn.style.background = '#6B8F71';
-  }
-  function toggleFab() {
-    if (menu.style.display === 'flex') closeFab(); else openFab();
+  function chiudi() {
+    fabMenu.classList.remove('aperto');
+    fabBtn.style.transform = 'none';
+    fabBtn.style.background = '#6B8F71';
+    isOpen = false;
   }
 
-  btn.addEventListener('click', function(e){ e.stopPropagation(); toggleFab(); });
-  overlay.addEventListener('click', closeFab);
+  fabBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (isOpen) chiudi(); else apri();
+  });
 
-  document.getElementById('fabVoice').addEventListener('click', function(){ closeFab(); startVoice(); });
-  document.getElementById('fabDone').addEventListener('click', function(){ closeFab(); openDoneModal(); });
-  document.getElementById('fabClear').addEventListener('click', function(){ closeFab(); cancellaSpesa(); });
-  document.getElementById('fabReminder').addEventListener('click', function(){ closeFab(); openReminderModal(); });
-  document.getElementById('fabCats').addEventListener('click', function(){ closeFab(); openCatManager(); });
-}
-
-/* ─── REMINDER ───────────────────────────── */
-function openReminderModal() {
-  // Load saved settings
-  var saved = JSON.parse(localStorage.getItem('migross_reminder') || 'null');
-  if (saved) {
-    document.getElementById('remDay').value = saved.day;
-    document.getElementById('remTime').value = saved.time;
-  }
-  // Check notification permission status
-  var status = document.getElementById('remNotifStatus');
-  if ('Notification' in window) {
-    var perm = Notification.permission;
-    status.style.display = '';
-    if (perm === 'granted') {
-      status.textContent = '✅ Notifiche abilitate — riceverai avvisi anche con app chiusa';
-      status.style.color = '#5a9e6e';
-    } else if (perm === 'denied') {
-      status.textContent = '⚠️ Notifiche bloccate — abilita da Impostazioni > Safari > Notifiche';
-      status.style.color = '#c0392b';
-    } else {
-      status.textContent = '💡 Premi Salva per abilitare le notifiche';
-      status.style.color = 'var(--gr)';
+  // Chiudi toccando fuori
+  document.addEventListener('click', function(e) {
+    if (isOpen && !e.target.closest('#fabBtn') && !e.target.closest('#fabMenu')) {
+      chiudi();
     }
-  }
-  document.getElementById('reminderModal').classList.add('open');
-}
+  });
 
-function salvaReminder() {
-  var day = parseInt(document.getElementById('remDay').value);
-  var time = document.getElementById('remTime').value;
-  var reminder = { day: day, time: time, active: true };
-  localStorage.setItem('migross_reminder', JSON.stringify(reminder));
-
-  // Request notification permission
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission().then(function(perm) {
-      if (perm === 'granted') {
-        scheduleNotification(reminder);
-      }
-    });
-  } else if (Notification.permission === 'granted') {
-    scheduleNotification(reminder);
-  }
-
-  closeModal('reminderModal');
-  alert('Reminder salvato per ' + ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][day] + ' alle ' + time + '!');
-}
-
-function cancellaReminder() {
-  localStorage.removeItem('migross_reminder');
-  closeModal('reminderModal');
-  alert('Reminder rimosso.');
-}
-
-function scheduleNotification(reminder) {
-  // Calculate ms until next occurrence
-  var now = new Date();
-  var parts = reminder.time.split(':');
-  var target = new Date();
-  target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
-
-  // Find next occurrence of the right day
-  var daysUntil = (reminder.day - now.getDay() + 7) % 7;
-  if (daysUntil === 0 && now > target) daysUntil = 7;
-  target.setDate(target.getDate() + daysUntil);
-
-  var msUntil = target - now;
-  if (msUntil > 0 && msUntil < 7 * 24 * 60 * 60 * 1000) {
-    setTimeout(function() {
-      new Notification('🛒 Spesa Migross', {
-        body: 'Oggi è giorno di spesa! La tua lista è pronta.',
-        icon: document.querySelector('link[rel="apple-touch-icon"]').href
-      });
-    }, msUntil);
-  }
-}
-
-function checkReminder() {
-  var saved = JSON.parse(localStorage.getItem('migross_reminder') || 'null');
-  if (!saved || !saved.active) return;
-
-  var now = new Date();
-  var parts = saved.time.split(':');
-  var targetHour = parseInt(parts[0]);
-  var targetMin = parseInt(parts[1]);
-
-  var isRightDay = now.getDay() === parseInt(saved.day);
-  var isRightTime = now.getHours() >= targetHour &&
-    (now.getHours() > targetHour || now.getMinutes() >= targetMin) &&
-    now.getHours() < targetHour + 3; // finestra di 3 ore
-
-  if (isRightDay && isRightTime) {
-    var lastShown = localStorage.getItem('migross_reminder_shown');
-    var today = now.toDateString();
-    if (lastShown !== today) {
-      document.getElementById('reminderBanner').style.display = '';
-      localStorage.setItem('migross_reminder_shown', today);
-      // Auto-hide after 8 seconds
-      setTimeout(function() {
-        var b = document.getElementById('reminderBanner');
-        if (b) b.style.display = 'none';
-      }, 8000);
-    }
-  }
-
-  // Schedule notification if permission granted
-  if (Notification.permission === 'granted') {
-    scheduleNotification(saved);
-  }
+  // Collega i tasti del menu
+  document.getElementById('fabVoice').addEventListener('click', function(e) {
+    e.stopPropagation();
+    chiudi();
+    setTimeout(function(){ startVoice(); }, 100);
+  });
+  document.getElementById('fabDone').addEventListener('click', function(e) {
+    e.stopPropagation();
+    chiudi();
+    setTimeout(function(){ openDoneModal(); }, 100);
+  });
+  document.getElementById('fabClear').addEventListener('click', function(e) {
+    e.stopPropagation();
+    chiudi();
+    setTimeout(function(){ cancellaSpesa(); }, 100);
+  });
+  document.getElementById('fabReminder').addEventListener('click', function(e) {
+    e.stopPropagation();
+    chiudi();
+    setTimeout(function(){ openReminderModal(); }, 100);
+  });
+  document.getElementById('fabCats').addEventListener('click', function(e) {
+    e.stopPropagation();
+    chiudi();
+    setTimeout(function(){ openCatManager(); }, 100);
+  });
 }
 
 /* ─── CATEGORY MANAGER ───────────────────── */
@@ -1233,6 +1152,53 @@ function renderCatManagerLists() {
   });
 }
 
+var newCatKwAccumulato = '';
+var newCatKwRecog = null;
+var newCatKwListening = false;
+
+function newCatKwPressStart(e) {
+  e.preventDefault(); e.stopPropagation();
+  if (newCatKwListening) return;
+  newCatKwListening = true;
+  newCatKwAccumulato = '';
+  var btn = document.getElementById('newCatVoiceBtn');
+  btn.textContent = '🔴 In ascolto... rilascia per aggiungere';
+  btn.style.background = '#8b3a3a';
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) return;
+  var SR3 = window.SpeechRecognition || window.webkitSpeechRecognition;
+  newCatKwRecog = new SR3();
+  newCatKwRecog.lang = 'it-IT';
+  newCatKwRecog.continuous = true;
+  newCatKwRecog.interimResults = true;
+  newCatKwRecog.onresult = function(e) {
+    var fin = '', tmp = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
+      else tmp += e.results[i][0].transcript;
+    }
+    if (fin) newCatKwAccumulato += fin;
+    btn.textContent = '🔴 ' + (newCatKwAccumulato + tmp).trim();
+  };
+  newCatKwRecog.onerror = function() { newCatKwPressStop(null); };
+  newCatKwRecog.onend = function() { if (newCatKwListening) newCatKwPressStop(null); };
+  try { newCatKwRecog.start(); } catch(ex) {}
+}
+
+function newCatKwPressStop(e) {
+  if (e) { try { e.preventDefault(); e.stopPropagation(); } catch(ex) {} }
+  if (!newCatKwListening) return;
+  newCatKwListening = false;
+  if (newCatKwRecog) { try { newCatKwRecog.stop(); } catch(ex) {} newCatKwRecog = null; }
+  var btn = document.getElementById('newCatVoiceBtn');
+  btn.textContent = '🎙️ Tieni premuto per parole chiave';
+  btn.style.background = 'var(--or)';
+  if (newCatKwAccumulato.trim()) {
+    var inp = document.getElementById('newCatKeywords');
+    inp.value = (inp.value.trim() ? inp.value.trim() + ', ' : '') + newCatKwAccumulato.trim();
+    newCatKwAccumulato = '';
+  }
+}
+
 function aggiungiCategoria() {
   var nome = (document.getElementById('newCatName').value||'').trim();
   var emoji = (document.getElementById('newCatEmoji').value||'🏷️').trim();
@@ -1285,6 +1251,7 @@ function salvaKeywords() {
 
 var kwRecog = null;
 var kwListening = false;
+var kwAccumulatoGlobale = '';
 
 function kwPressStart(e) {
   e.preventDefault();
@@ -1310,9 +1277,11 @@ function kwPressStart(e) {
       if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
       else tmp += e.results[i][0].transcript;
     }
-    if (fin) kwAccumulato += fin;
+    if (fin) {
+      kwAccumulato += fin;
+      kwAccumulatoGlobale = kwAccumulato; // salva globale
+    }
     btn.textContent = '🔴 ' + (kwAccumulato + tmp).trim();
-    kwRecog._acc = kwAccumulato;
   };
   kwRecog.onerror = function() { kwPressStop(e); };
   kwRecog.onend = function() {
@@ -1325,16 +1294,17 @@ function kwPressStop(e) {
   if (e) { try { e.preventDefault(); e.stopPropagation(); } catch(ex) {} }
   if (!kwListening) return;
   kwListening = false;
-  var acc = (kwRecog && kwRecog._acc) ? kwRecog._acc : '';
+  var acc = kwAccumulatoGlobale || '';
+  kwAccumulatoGlobale = '';
   if (kwRecog) { try { kwRecog.stop(); } catch(ex) {} kwRecog = null; }
   var btn = document.getElementById('kwVoiceBtn');
   btn.textContent = '🎙️ Tieni premuto e parla';
   btn.style.background = 'var(--or)';
   if (acc.trim()) {
     var inp = document.getElementById('kwInput');
-    // Aggiunge le parole come keyword separate da virgola
-    var nuove = acc.trim().split(/\s+/).join(', ');
-    inp.value = (inp.value ? inp.value + ', ' : '') + nuove;
+    // Ogni parola/gruppo diventa una keyword separata da virgola
+    var nuove = acc.trim();
+    inp.value = (inp.value.trim() ? inp.value.trim() + ', ' : '') + nuove;
   }
 }
 
@@ -1503,7 +1473,16 @@ initFab();
         <input class="m-inp" id="newCatEmoji" placeholder="🏷️" style="width:60px;text-align:center;font-size:20px"/>
       </div>
       <div class="m-lbl" style="margin-bottom:8px">Parole chiave (separate da virgola)</div>
-      <input class="m-inp" id="newCatKeywords" placeholder="es. sushi, gyoza, ramen..."/>
+      <input class="m-inp" id="newCatKeywords" placeholder="es. sushi, gyoza, ramen..." style="margin-bottom:8px"/>
+      <div id="newCatVoiceBtn"
+        onmousedown="newCatKwPressStart(event)" onmouseup="newCatKwPressStop(event)" onmouseleave="newCatKwPressStop(event)"
+        ontouchstart="newCatKwPressStart(event)" ontouchend="newCatKwPressStop(event)" ontouchcancel="newCatKwPressStop(event)"
+        style="background:var(--or);color:#fff;border-radius:12px;padding:11px;
+        font-family:Lato,sans-serif;font-size:14px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;gap:8px;
+        cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;margin-bottom:4px">
+        🎙️ Tieni premuto per parole chiave
+      </div>
       <div style="font-size:11px;color:var(--gr);margin-top:6px">Le parole chiave aiutano il riconoscimento automatico</div>
       <button onclick="aggiungiCategoria()" style="width:100%;margin-top:12px;background:var(--or);color:#fff;border:none;border-radius:12px;padding:12px;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;cursor:pointer">
         ➕ Aggiungi categoria
