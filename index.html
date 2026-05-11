@@ -287,6 +287,13 @@ header{
       background:#7898C8;color:#fff;font-size:26px;
       box-shadow:0 3px 14px rgba(120,152,200,.4);cursor:pointer;flex-shrink:0">🔔</button>
   </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="background:var(--dk);color:#fff;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;font-family:'Lato',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)">Gestisci categorie</span>
+    <button onclick="openCatManager();toggleFabMenu()" style="
+      width:58px;height:58px;border-radius:50%;border:none;
+      background:#8B6BAE;color:#fff;font-size:26px;
+      box-shadow:0 3px 14px rgba(139,107,174,.4);cursor:pointer;flex-shrink:0">🗂️</button>
+  </div>
 </div>
 
 <!-- BACKDROP FAB -->
@@ -437,8 +444,11 @@ const CATS=[
   {name:'Verdure e frutta',    emoji:'🥦', color:'#6BBF6B',tc:'#002a0f'},
   {name:'Acqua',               emoji:'💧', color:'#4AABE8',tc:'#001a2a'},
   {name:'Sughi e pasta',       emoji:'🍝', color:'#E8734A',tc:'#2a0f00'},
+  {name:'Zuppe e cibi pronti', emoji:'🍲', color:'#E86A3A',tc:'#2a0800'},
   {name:'Bibite e bevande',    emoji:'🥤', color:'#E8A84A',tc:'#2a1a00'},
   {name:'Formaggi e affettati',emoji:'🧀', color:'#D4A850',tc:'#2a1800'},
+  {name:'Banco pesce',         emoji:'🐟', color:'#4AC8C8',tc:'#002a2a'},
+  {name:'Banco carne',         emoji:'🥩', color:'#E85A5A',tc:'#2a0000'},
   {name:'Pane',                emoji:'🍞', color:'#C4935A',tc:'#2a1000'},
   {name:'Cibo gatti',          emoji:'🐱', color:'#A07898',tc:'#1e0028'},
   {name:'Detersivi',           emoji:'🧹', color:'#7898C8',tc:'#001028'},
@@ -700,11 +710,14 @@ var CAT_KEYWORDS = {
   'Cura corpo':['shampoo','bagnoschiuma','sapone','dentifricio','cotton','scottex','carta igienica','lacca','deodorante','crema','profumo','rasoi','gel','balsamo'],
   'Verdure e frutta':['verdura','frutta','insalata','pomodoro','cipolla','aglio','patate','carote','zucchine','melanzane','peperoni','spinaci','broccoli','mela','pera','banana','arancia','limone','uva','fragole','anguria','melone'],
   'Acqua':['acqua'],
-  'Sughi e pasta':['pasta','sughi','sugo','riso','lasagne','fusilli','spaghetti','penne','rigatoni','gnocchi','olio','sale','zucchero','farina','brodo','legumi','fagioli','ceci','lenticchie','tonno','pesce'],
+  'Sughi e pasta':['pasta','sughi','sugo','riso','lasagne','fusilli','spaghetti','penne','rigatoni','gnocchi','olio','sale','zucchero','farina','brodo','legumi','fagioli','ceci','lenticchie'],
+  'Zuppe e cibi pronti':['zuppa','zuppe','minestra','minestrone','vellutata','passato','crema verdure','piatto pronto','cibo pronto','pronto','farro','orzo','spelt','cereali pronti','soupe','lenticchie pronte'],
   'Bibite e bevande':['bibite','bevande','succo','succhi','aranciata','coca','cola','fanta','sprite','birra','vino','prosecco','limonata','tonica'],
   'Formaggi e affettati':['formaggio','prosciutto','salame','mortadella','bresaola','speck','pancetta','coppa','yogurt','uova','parmigiano','mozzarella','ricotta','grana','pecorino','scamorza'],
+  'Banco pesce':['pesce','salmone','tonno','branzino','orata','merluzzo','baccala','gamberi','calamari','vongole','cozze','frutti di mare','filetto pesce','pesce spada','trota'],
+  'Banco carne':['carne','pollo','manzo','maiale','agnello','vitello','tacchino','salsiccia','costine','bistecca','hamburger','fesa','petto pollo','fettine','braciole','spezzatino'],
   'Pane':['pane','piadine','grissini','taralli','focaccia','ciabatta','baguette','crackers','fette biscottate'],
-  'Cibo gatti':['gatti','gatto','cibo gatti','whiskas','felix'],
+  'Cibo gatti':['gatti','gatto','cibo gatti','whiskas','felix','lettiera','sabbia gatti'],
   'Detersivi':['detersivo','acchiappa','candeggina','ammorbidente','lavastoviglie','lavatrice','spugna','guanti','sacchetti','pattumiera','vetri','pavimenti','dash','ariel','ace']
 };
 
@@ -742,7 +755,8 @@ function vAggiungiTesto(testo) {
   if (!testo || !testo.trim()) return;
   var nomi = vSplitTesto(testo);
   nomi.forEach(function(nome) {
-    vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
+    var cat = guessCat(nome);
+    vListaItems.push({ name: nome, cat: cat || 'Pranzo', catManuale: cat !== null });
   });
   vRenderLista();
 }
@@ -767,7 +781,7 @@ function vRenderLista() {
       'font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (i+1) + '</div>' +
       '<div style="flex:1">' +
         '<div style="font-size:15px;font-weight:600;color:var(--dk)">' + icon(it.name) + ' ' + it.name + '</div>' +
-        '<div style="font-size:11px;color:var(--gr);margin-top:1px">' + it.cat + '</div>' +
+        '<div style="font-size:11px;margin-top:1px;color:' + (it.catManuale===false ? '#c0392b' : 'var(--gr)') + '">' + (it.catManuale===false ? '⚠️ Categoria da scegliere' : it.cat) + '</div>' +
       '</div>' +
       '<button onclick="vRimuovi(' + i + ')" style="background:none;border:none;color:var(--gr);' +
       'font-size:18px;cursor:pointer;padding:4px 6px;line-height:1;flex-shrink:0">✕</button>' +
@@ -902,7 +916,13 @@ function vSplitIntelligente(testo) {
     'bresaola manzo','salame milano','mortadella bologna',
     'prosciutto cotto alta qualita',
     'brodo vegetale','brodo carne','brodo pollo',
-    'dado brodo','dado vegetale'
+    'dado brodo','dado vegetale',
+    'zuppa farro','zuppa orzo','zuppa lenticchie','zuppa verdure',
+    'minestra verdure','crema verdure','vellutata zucca',
+    'filetto salmone','filetto branzino','filetto merluzzo',
+    'petto pollo','fesa tacchino','fettine vitello',
+    'salsiccia maiale','costine maiale','hamburger manzo',
+    'banco pesce','banco carne','cibi pronti','piatti pronti'
   ];
 
   // Prima sostituisce le parole composte con placeholder
@@ -947,10 +967,72 @@ function startVoice() {
 
 /* Conferma e aggiunge alla lista vera */
 function confermaLista() {
-  vListaItems.forEach(function(it) {
-    if (it.name && it.cat) push(it.name, it.cat);
+  // Controlla se ci sono articoli senza categoria assegnata dal guessCat
+  var senzaCat = vListaItems.filter(function(it){ return it.catManuale === false; });
+  if (senzaCat.length > 0) {
+    // Chiedi categoria per il primo articolo senza categoria
+    chiediCategoria(0);
+  } else {
+    // Tutto ok, aggiungi tutti
+    vListaItems.forEach(function(it) {
+      if (it.name && it.cat) push(it.name, it.cat);
+    });
+    closeVov();
+  }
+}
+
+function chiediCategoria(idx) {
+  // Trova il prossimo articolo senza categoria confermata
+  var pendenti = vListaItems.filter(function(it){ return it.catManuale === false; });
+  if (pendenti.length === 0) {
+    // Tutti confermati, aggiungi
+    vListaItems.forEach(function(it) {
+      if (it.name && it.cat) push(it.name, it.cat);
+    });
+    closeVov();
+    return;
+  }
+  var it = pendenti[0];
+  // Mostra il picker di categoria
+  document.getElementById('vCatPickerNome').textContent = it.name;
+  document.getElementById('vCatPickerModal').style.display = 'flex';
+  document.getElementById('vCatPickerTarget').value = vListaItems.indexOf(it);
+  // Render cat buttons
+  var btns = document.getElementById('vCatPickerBtns');
+  btns.innerHTML = '';
+  CATS.forEach(function(c){
+    var b = document.createElement('button');
+    b.innerHTML = c.emoji + ' ' + c.name;
+    b.style.cssText = 'padding:10px 14px;border-radius:22px;border:2px solid var(--gr2);background:#fff;font-family:Lato,sans-serif;font-size:14px;font-weight:600;color:var(--mid);cursor:pointer;margin:0';
+    b.addEventListener('click', (function(cat, btn){ return function(){ selezionaCat(btn, cat); }; })(c.name, b));
+    btns.appendChild(b);
   });
-  closeVov();
+}
+
+function selezionaCat(btn, catName) {
+  // Evidenzia selezione
+  var btns = document.getElementById('vCatPickerBtns').querySelectorAll('button');
+  btns.forEach(function(b){ b.style.background='#fff'; b.style.borderColor='var(--gr2)'; b.style.color='var(--mid)'; });
+  btn.style.background = 'var(--or3)';
+  btn.style.borderColor = 'var(--or)';
+  btn.style.color = 'var(--or)';
+  btn.dataset.sel = catName;
+  document.getElementById('vCatPickerConferma').dataset.cat = catName;
+}
+
+function confermaCatPicker() {
+  var cat = document.getElementById('vCatPickerConferma').dataset.cat;
+  var idx = parseInt(document.getElementById('vCatPickerTarget').value);
+  if (!cat) {
+    alert('Seleziona una categoria!');
+    return;
+  }
+  vListaItems[idx].cat = cat;
+  vListaItems[idx].catManuale = true;
+  document.getElementById('vCatPickerModal').style.display = 'none';
+  vRenderLista();
+  // Controlla se ce ne sono altri
+  chiediCategoria(0);
 }
 
 /* Tastiera */
@@ -1094,6 +1176,107 @@ function checkReminder() {
   }
 }
 
+/* ─── CATEGORY MANAGER ───────────────────── */
+
+// Carica categorie custom dal localStorage
+function loadCustomCats() {
+  return JSON.parse(localStorage.getItem('migross_custom_cats') || '[]');
+}
+
+function saveCustomCats(cats) {
+  localStorage.setItem('migross_custom_cats', JSON.stringify(cats));
+}
+
+// Aggiorna CATS array con le categorie custom
+function refreshCatsWithCustom() {
+  var custom = loadCustomCats();
+  // Rimuovi eventuali custom precedenti e ri-aggiungi
+  var base = CATS.filter(function(c){ return !c.isCustom; });
+  custom.forEach(function(c){ base.push(c); });
+  // Sovrascrive CATS in place
+  CATS.length = 0;
+  base.forEach(function(c){ CATS.push(c); });
+  // Aggiorna anche CAT_KEYWORDS
+  custom.forEach(function(c){
+    if (c.keywords && c.keywords.length) {
+      CAT_KEYWORDS[c.name] = c.keywords;
+    }
+  });
+}
+
+function openCatManager() {
+  renderCatManagerLists();
+  document.getElementById('catManagerModal').classList.add('open');
+}
+
+function renderCatManagerLists() {
+  var custom = loadCustomCats();
+  var customEl = document.getElementById('customCatList');
+  var defaultEl = document.getElementById('defaultCatList');
+
+  if (!custom.length) {
+    customEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--gr);font-size:13px">Nessuna categoria personalizzata</div>';
+  } else {
+    customEl.innerHTML = custom.map(function(c, i) {
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--off);border-radius:12px;margin-bottom:8px;border:2px solid var(--gr2)">' +
+        '<span style="font-size:22px">' + (c.emoji||'🏷️') + '</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:14px;font-weight:700;color:var(--dk)">' + c.name + '</div>' +
+          '<div style="font-size:11px;color:var(--gr);margin-top:2px">' + (c.keywords||[]).join(', ') + '</div>' +
+        '</div>' +
+        '<button onclick="eliminaCategoria(' + i + ')" style="background:#fff0f0;border:none;color:#c0392b;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer">🗑️</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  defaultEl.innerHTML = CATS.filter(function(c){ return !c.isCustom; }).map(function(c) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--gr2);border-radius:12px;margin-bottom:6px;opacity:.7">' +
+      '<span style="font-size:18px">' + c.emoji + '</span>' +
+      '<div style="font-size:13px;font-weight:600;color:var(--mid)">' + c.name + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function aggiungiCategoria() {
+  var nome = (document.getElementById('newCatName').value||'').trim();
+  var emoji = (document.getElementById('newCatEmoji').value||'🏷️').trim();
+  var kwRaw = (document.getElementById('newCatKeywords').value||'').trim();
+  if (!nome) { alert('Inserisci il nome della categoria!'); return; }
+
+  var keywords = kwRaw.split(',').map(function(k){ return k.trim().toLowerCase(); }).filter(function(k){ return k.length > 0; });
+
+  // Colori casuali per le nuove categorie
+  var colors = ['#E8734A','#6BBF6B','#E8A84A','#A07898','#7898C8','#4AC8C8','#E85A5A','#8B6BAE'];
+  var color = colors[Math.floor(Math.random() * colors.length)];
+
+  var newCat = { name: nome, emoji: emoji, color: color, tc: '#fff', isCustom: true, keywords: keywords };
+
+  var custom = loadCustomCats();
+  custom.push(newCat);
+  saveCustomCats(custom);
+  refreshCatsWithCustom();
+
+  // Reset form
+  document.getElementById('newCatName').value = '';
+  document.getElementById('newCatEmoji').value = '';
+  document.getElementById('newCatKeywords').value = '';
+
+  renderCatManagerLists();
+  render(); // aggiorna tabs
+  alert(emoji + ' ' + nome + ' aggiunta!');
+}
+
+function eliminaCategoria(idx) {
+  var custom = loadCustomCats();
+  var nome = custom[idx].name;
+  if (!confirm('Eliminare la categoria "' + nome + '"?')) return;
+  custom.splice(idx, 1);
+  saveCustomCats(custom);
+  refreshCatsWithCustom();
+  renderCatManagerLists();
+  render();
+}
+
 /* ─── LAYOUT FIX ─────────────────────────── */
 function fixLayout() {
   var hdr = document.querySelector('header');
@@ -1110,6 +1293,7 @@ window.addEventListener('resize', fixLayout);
 
 /* ─── INIT ───────────────────────────────── */
 load();
+refreshCatsWithCustom();
 render();
 checkReminder();
 </script>
@@ -1204,5 +1388,65 @@ checkReminder();
   to { transform: translateY(0); }
 }
 </style>
+
+<!-- CAT PICKER MODAL -->
+<div id="vCatPickerModal" style="display:none;position:fixed;inset:0;background:rgba(42,21,0,.6);z-index:300;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:26px 26px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;animation:sup .28s cubic-bezier(.22,1,.36,1)">
+    <div style="width:40px;height:4px;background:var(--gr2);border-radius:2px;margin:0 auto 20px"></div>
+    <div style="font-family:'Lato',sans-serif;font-size:18px;font-weight:700;color:var(--dk);margin-bottom:6px">
+      In quale categoria va <span id="vCatPickerNome" style="color:var(--or)"></span>?
+    </div>
+    <div style="font-size:13px;color:var(--gr);margin-bottom:18px">Non riconosco questo articolo — scegli tu la categoria</div>
+    <input type="hidden" id="vCatPickerTarget" value="0"/>
+    <div id="vCatPickerBtns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('vCatPickerModal').style.display='none'" 
+        style="flex:1;background:var(--gr2);color:var(--mid);border:none;border-radius:14px;padding:14px;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+        Annulla
+      </button>
+      <button id="vCatPickerConferma" onclick="confermaCatPicker()" data-cat=""
+        style="flex:2;background:var(--or);color:#fff;border:none;border-radius:14px;padding:14px;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;cursor:pointer">
+        ✔ Conferma categoria
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CAT MANAGER MODAL -->
+<div class="modal-bg" id="catManagerModal">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🗂️ Gestisci categorie</div>
+    <div style="font-size:13px;color:var(--gr);margin-bottom:18px">Aggiungi categorie personalizzate. Verranno usate anche dal riconoscimento vocale.</div>
+
+    <!-- AGGIUNGI NUOVA -->
+    <div style="background:var(--off);border-radius:14px;padding:14px;margin-bottom:18px;border:2px solid var(--gr2)">
+      <div class="m-lbl" style="margin-bottom:8px">Nuova categoria</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input class="m-inp" id="newCatName" placeholder="Nome categoria..." style="flex:1"/>
+        <input class="m-inp" id="newCatEmoji" placeholder="🏷️" style="width:60px;text-align:center;font-size:20px"/>
+      </div>
+      <div class="m-lbl" style="margin-bottom:8px">Parole chiave (separate da virgola)</div>
+      <input class="m-inp" id="newCatKeywords" placeholder="es. sushi, gyoza, ramen..."/>
+      <div style="font-size:11px;color:var(--gr);margin-top:6px">Le parole chiave aiutano il riconoscimento automatico</div>
+      <button onclick="aggiungiCategoria()" style="width:100%;margin-top:12px;background:var(--or);color:#fff;border:none;border-radius:12px;padding:12px;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;cursor:pointer">
+        ➕ Aggiungi categoria
+      </button>
+    </div>
+
+    <!-- LISTA CATEGORIE CUSTOM -->
+    <div class="m-lbl" style="margin-bottom:10px">Le tue categorie personalizzate</div>
+    <div id="customCatList"></div>
+
+    <!-- LISTA CATEGORIE DEFAULT -->
+    <div class="m-lbl" style="margin-top:18px;margin-bottom:10px">Categorie predefinite</div>
+    <div id="defaultCatList"></div>
+
+    <div style="margin-top:20px">
+      <button class="btn-cancel" style="width:100%" onclick="closeModal('catManagerModal')">Chiudi</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
