@@ -1137,24 +1137,55 @@ function renderCatManagerLists() {
   var custom = loadCustomCats();
   var customEl = document.getElementById('customCatList');
   var defaultEl = document.getElementById('defaultCatList');
+  var extraKwAll = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
 
   if (!custom.length) {
     customEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--gr);font-size:13px">Nessuna categoria personalizzata</div>';
   } else {
-    customEl.innerHTML = custom.map(function(c, i) {
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--off);border-radius:12px;margin-bottom:8px;border:2px solid var(--gr2)">' +
-        '<span style="font-size:22px">' + (c.emoji||'🏷️') + '</span>' +
-        '<div style="flex:1">' +
-          '<div style="font-size:14px;font-weight:700;color:var(--dk)">' + c.name + '</div>' +
-          '<div style="font-size:11px;color:var(--gr);margin-top:2px">' + (c.keywords||[]).join(', ') + '</div>' +
+    customEl.innerHTML = '';
+    custom.forEach(function(c, i) {
+      var ownKw = (c.keywords||[]).join(', ');
+      var extra = (extraKwAll[c.name]||[]).join(', ');
+      var kwHtml;
+      if (ownKw && extra) {
+        kwHtml = ownKw + ', <span style="color:var(--or);font-weight:600">+' + extra + '</span>';
+      } else if (ownKw) {
+        kwHtml = ownKw;
+      } else if (extra) {
+        kwHtml = '<span style="color:var(--or);font-weight:600">+' + extra + '</span>';
+      } else {
+        kwHtml = '<span style="color:var(--gr)">Tocca ✏️ per aggiungere parole chiave</span>';
+      }
+
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--off);border-radius:12px;margin-bottom:8px;border:2px solid var(--gr2)';
+
+      var info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0';
+      info.innerHTML =
+        '<div style="font-size:14px;font-weight:700;color:var(--dk)">' +
+          '<span style="font-size:18px;margin-right:6px">' + (c.emoji||'🏷️') + '</span>' + c.name +
         '</div>' +
-        '<button onclick="eliminaCategoria(' + i + ')" style="background:#fff0f0;border:none;color:#c0392b;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer">🗑️</button>' +
-      '</div>';
-    }).join('');
+        '<div style="font-size:11px;margin-top:2px">' + kwHtml + '</div>';
+
+      var editBtn = document.createElement('button');
+      editBtn.textContent = '✏️';
+      editBtn.style.cssText = 'background:#fff;border:2px solid var(--gr2);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0';
+      editBtn.addEventListener('click', (function(n){ return function(){ editCatKeywords(n); }; })(c.name));
+
+      var delBtn = document.createElement('button');
+      delBtn.textContent = '🗑️';
+      delBtn.style.cssText = 'background:#fff0f0;border:none;color:#c0392b;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0';
+      delBtn.addEventListener('click', (function(idx){ return function(){ eliminaCategoria(idx); }; })(i));
+
+      row.appendChild(info);
+      row.appendChild(editBtn);
+      row.appendChild(delBtn);
+      customEl.appendChild(row);
+    });
   }
 
-  var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
-  var extraKw2 = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
+  var extraKw2 = extraKwAll;
   defaultEl.innerHTML = '';
   CATS.filter(function(c){ return !c.isCustom; }).forEach(function(cat) {
     var extra = (extraKw2[cat.name]||[]).join(', ');
