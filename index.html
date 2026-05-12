@@ -1208,6 +1208,7 @@ function renderCatManagerLists() {
 }
 
 var newCatNameAccumulato = '';
+var newCatNameUltimo = '';
 var newCatNameRecog = null;
 var newCatNameListening = false;
 
@@ -1216,6 +1217,7 @@ function newCatNamePressStart(e) {
   if (newCatNameListening) return;
   newCatNameListening = true;
   newCatNameAccumulato = '';
+  newCatNameUltimo = '';
   var btn = document.getElementById('newCatNameVoiceBtn');
   btn.textContent = '🔴 In ascolto... rilascia';
   btn.style.background = '#8b3a3a';
@@ -1232,7 +1234,8 @@ function newCatNamePressStart(e) {
       else tmp += e.results[i][0].transcript;
     }
     if (fin) newCatNameAccumulato += fin;
-    btn.textContent = '🔴 ' + (newCatNameAccumulato + tmp).trim();
+    newCatNameUltimo = (newCatNameAccumulato + tmp).trim();
+    btn.textContent = '🔴 ' + (newCatNameUltimo || 'In ascolto...');
   };
   newCatNameRecog.onerror = function() { newCatNamePressStop(null); };
   newCatNameRecog.onend = function() { if (newCatNameListening) newCatNamePressStop(null); };
@@ -1247,16 +1250,19 @@ function newCatNamePressStop(e) {
   var btn = document.getElementById('newCatNameVoiceBtn');
   btn.textContent = '🎙️ Tieni premuto per dire il nome';
   btn.style.background = 'var(--or)';
-  if (newCatNameAccumulato.trim()) {
+  // Fallback: se non c'è un risultato "finale", usa l'ultimo testo interim
+  var testo = newCatNameAccumulato.trim() || newCatNameUltimo.trim();
+  if (testo) {
     var inp = document.getElementById('newCatName');
-    var nome = newCatNameAccumulato.trim();
-    nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+    var nome = testo.charAt(0).toUpperCase() + testo.slice(1).toLowerCase();
     inp.value = nome;
-    newCatNameAccumulato = '';
   }
+  newCatNameAccumulato = '';
+  newCatNameUltimo = '';
 }
 
 var newCatKwAccumulato = '';
+var newCatKwUltimo = '';
 var newCatKwRecog = null;
 var newCatKwListening = false;
 
@@ -1265,6 +1271,7 @@ function newCatKwPressStart(e) {
   if (newCatKwListening) return;
   newCatKwListening = true;
   newCatKwAccumulato = '';
+  newCatKwUltimo = '';
   var btn = document.getElementById('newCatVoiceBtn');
   btn.textContent = '🔴 In ascolto... rilascia per aggiungere';
   btn.style.background = '#8b3a3a';
@@ -1281,7 +1288,8 @@ function newCatKwPressStart(e) {
       else tmp += e.results[i][0].transcript;
     }
     if (fin) newCatKwAccumulato += fin;
-    btn.textContent = '🔴 ' + (newCatKwAccumulato + tmp).trim();
+    newCatKwUltimo = (newCatKwAccumulato + tmp).trim();
+    btn.textContent = '🔴 ' + (newCatKwUltimo || 'In ascolto...');
   };
   newCatKwRecog.onerror = function() { newCatKwPressStop(null); };
   newCatKwRecog.onend = function() { if (newCatKwListening) newCatKwPressStop(null); };
@@ -1296,11 +1304,14 @@ function newCatKwPressStop(e) {
   var btn = document.getElementById('newCatVoiceBtn');
   btn.textContent = '🎙️ Tieni premuto per parole chiave';
   btn.style.background = 'var(--or)';
-  if (newCatKwAccumulato.trim()) {
+  // Fallback: se non c'è un risultato "finale", usa l'ultimo testo interim
+  var testo = newCatKwAccumulato.trim() || newCatKwUltimo.trim();
+  if (testo) {
     var inp = document.getElementById('newCatKeywords');
-    inp.value = (inp.value.trim() ? inp.value.trim() + ', ' : '') + newCatKwAccumulato.trim();
-    newCatKwAccumulato = '';
+    inp.value = (inp.value.trim() ? inp.value.trim() + ', ' : '') + testo;
   }
+  newCatKwAccumulato = '';
+  newCatKwUltimo = '';
 }
 
 function aggiungiCategoria() {
