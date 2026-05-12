@@ -245,40 +245,29 @@ header{
 
 <!-- FAB BUTTON + MENU -->
 <style>
-.fab-item { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.fab-item span { background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap; }
-.fab-circle { width:54px;height:54px;border-radius:50%;color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);border:none;flex-shrink:0; }
-#fabWrap { position:fixed;bottom:24px;right:18px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end; }
-#fabMenuItems { display:none;flex-direction:column;align-items:flex-end;margin-bottom:10px; }
-#fabOpen { width:60px;height:60px;border-radius:50%;background:#6B8F71;color:#fff;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center; }
+#fabContainer{position:fixed;bottom:24px;right:18px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;pointer-events:none}
+#fabContainer > *{pointer-events:auto}
+#fabMenuBox{display:none;flex-direction:column;align-items:flex-end;gap:10px;margin-bottom:12px}
+#fabMenuBox.open{display:flex}
+.fab-row{display:flex;align-items:center;gap:10px}
+.fab-lbl{background:#2A1500;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;font-family:'Lato',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.fab-mini{width:54px;height:54px;border-radius:50%;color:#fff;font-size:24px;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;padding:0}
+.fab-main{width:60px;height:60px;border-radius:50%;background:#6B8F71;color:#fff;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;padding:0;transition:transform .2s,background .2s}
+.fab-main.open{background:#2A1500;transform:rotate(45deg)}
 </style>
 
-<div id="fabWrap">
-  <div id="fabMenuItems">
-    <div class="fab-item">
-      <span>Aggiungi articoli</span>
-      <button class="fab-circle" id="f1" style="background:#6B8F71">🎙️</button>
-    </div>
-    <div class="fab-item">
-      <span>Spesa completata</span>
-      <button class="fab-circle" id="f2" style="background:#5a9e6e">✅</button>
-    </div>
-    <div class="fab-item">
-      <span>Cancella tutto</span>
-      <button class="fab-circle" id="f3" style="background:#c0392b">🗑️</button>
-    </div>
-    <div class="fab-item">
-      <span>Reminder spesa</span>
-      <button class="fab-circle" id="f4" style="background:#7898C8">🔔</button>
-    </div>
-    <div class="fab-item">
-      <span>Gestisci categorie</span>
-      <button class="fab-circle" id="f5" style="background:#8B6BAE">🗂️</button>
-    </div>
+<div id="fabContainer">
+  <div id="fabMenuBox">
+    <div class="fab-row"><div class="fab-lbl">Aggiungi articoli</div><button type="button" class="fab-mini" id="fabBtnVoice" style="background:#6B8F71">🎙️</button></div>
+    <div class="fab-row"><div class="fab-lbl">Spesa completata</div><button type="button" class="fab-mini" id="fabBtnDone" style="background:#5a9e6e">✅</button></div>
+    <div class="fab-row"><div class="fab-lbl">Cancella tutto</div><button type="button" class="fab-mini" id="fabBtnClear" style="background:#c0392b">🗑️</button></div>
+    <div class="fab-row"><div class="fab-lbl">Reminder spesa</div><button type="button" class="fab-mini" id="fabBtnReminder" style="background:#7898C8">🔔</button></div>
+    <div class="fab-row"><div class="fab-lbl">Gestisci categorie</div><button type="button" class="fab-mini" id="fabBtnCats" style="background:#8B6BAE">🗂️</button></div>
   </div>
-  <button id="fabOpen">＋</button>
+  <button type="button" class="fab-main" id="fabMainBtn">＋</button>
 </div>
 
+<!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
 <!-- VOICE OVERLAY -->
@@ -1013,32 +1002,56 @@ function closeVov() {
 
 /* ─── FAB MENU ───────────────────────────── */
 function initFab() {
-  var open = false;
-  var menu = document.getElementById('fabMenuItems');
-  var btn = document.getElementById('fabOpen');
+  var mainBtn = document.getElementById('fabMainBtn');
+  var menuBox = document.getElementById('fabMenuBox');
+  if (!mainBtn || !menuBox) return;
 
-  btn.addEventListener('click', function() {
-    open = !open;
-    menu.style.display = open ? 'flex' : 'none';
-    btn.textContent = open ? '✕' : '＋';
-    btn.style.background = open ? '#2A1500' : '#6B8F71';
-  });
-
+  function apri() {
+    menuBox.classList.add('open');
+    mainBtn.classList.add('open');
+  }
   function chiudi() {
-    open = false;
-    menu.style.display = 'none';
-    btn.textContent = '＋';
-    btn.style.background = '#6B8F71';
+    menuBox.classList.remove('open');
+    mainBtn.classList.remove('open');
+  }
+  function toggle() {
+    if (menuBox.classList.contains('open')) chiudi(); else apri();
   }
 
-  document.getElementById('f1').addEventListener('click', function() { chiudi(); setTimeout(startVoice, 150); });
-  document.getElementById('f2').addEventListener('click', function() { chiudi(); setTimeout(openDoneModal, 150); });
-  document.getElementById('f3').addEventListener('click', function() { chiudi(); setTimeout(cancellaSpesa, 150); });
-  document.getElementById('f4').addEventListener('click', function() { chiudi(); setTimeout(openReminderModal, 150); });
-  document.getElementById('f5').addEventListener('click', function() { chiudi(); setTimeout(openCatManager, 150); });
+  mainBtn.onclick = function(ev) { ev.stopPropagation(); toggle(); };
 
-  document.addEventListener('click', function(e) {
-    if (open && !document.getElementById('fabWrap').contains(e.target)) chiudi();
+  // Click sui tasti del menu - usa onclick diretto (semplice e affidabile)
+  document.getElementById('fabBtnVoice').onclick = function(ev) {
+    ev.stopPropagation();
+    chiudi();
+    setTimeout(function(){ startVoice(); }, 150);
+  };
+  document.getElementById('fabBtnDone').onclick = function(ev) {
+    ev.stopPropagation();
+    chiudi();
+    setTimeout(function(){ openDoneModal(); }, 150);
+  };
+  document.getElementById('fabBtnClear').onclick = function(ev) {
+    ev.stopPropagation();
+    chiudi();
+    setTimeout(function(){ cancellaSpesa(); }, 150);
+  };
+  document.getElementById('fabBtnReminder').onclick = function(ev) {
+    ev.stopPropagation();
+    chiudi();
+    setTimeout(function(){ openReminderModal(); }, 150);
+  };
+  document.getElementById('fabBtnCats').onclick = function(ev) {
+    ev.stopPropagation();
+    chiudi();
+    setTimeout(function(){ openCatManager(); }, 150);
+  };
+
+  // Chiudi toccando fuori
+  document.addEventListener('click', function(ev) {
+    if (menuBox.classList.contains('open') && !document.getElementById('fabContainer').contains(ev.target)) {
+      chiudi();
+    }
   });
 }
 
@@ -1116,6 +1129,55 @@ function renderCatManagerLists() {
     row.appendChild(editBtn);
     defaultEl.appendChild(row);
   });
+}
+
+var newCatNameAccumulato = '';
+var newCatNameRecog = null;
+var newCatNameListening = false;
+
+function newCatNamePressStart(e) {
+  e.preventDefault(); e.stopPropagation();
+  if (newCatNameListening) return;
+  newCatNameListening = true;
+  newCatNameAccumulato = '';
+  var btn = document.getElementById('newCatNameVoiceBtn');
+  btn.textContent = '🔴 In ascolto... rilascia';
+  btn.style.background = '#8b3a3a';
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) return;
+  var SR4 = window.SpeechRecognition || window.webkitSpeechRecognition;
+  newCatNameRecog = new SR4();
+  newCatNameRecog.lang = 'it-IT';
+  newCatNameRecog.continuous = true;
+  newCatNameRecog.interimResults = true;
+  newCatNameRecog.onresult = function(e) {
+    var fin = '', tmp = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
+      else tmp += e.results[i][0].transcript;
+    }
+    if (fin) newCatNameAccumulato += fin;
+    btn.textContent = '🔴 ' + (newCatNameAccumulato + tmp).trim();
+  };
+  newCatNameRecog.onerror = function() { newCatNamePressStop(null); };
+  newCatNameRecog.onend = function() { if (newCatNameListening) newCatNamePressStop(null); };
+  try { newCatNameRecog.start(); } catch(ex) {}
+}
+
+function newCatNamePressStop(e) {
+  if (e) { try { e.preventDefault(); e.stopPropagation(); } catch(ex) {} }
+  if (!newCatNameListening) return;
+  newCatNameListening = false;
+  if (newCatNameRecog) { try { newCatNameRecog.stop(); } catch(ex) {} newCatNameRecog = null; }
+  var btn = document.getElementById('newCatNameVoiceBtn');
+  btn.textContent = '🎙️ Tieni premuto per dire il nome';
+  btn.style.background = 'var(--or)';
+  if (newCatNameAccumulato.trim()) {
+    var inp = document.getElementById('newCatName');
+    var nome = newCatNameAccumulato.trim();
+    nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+    inp.value = nome;
+    newCatNameAccumulato = '';
+  }
 }
 
 var newCatKwAccumulato = '';
@@ -1520,9 +1582,18 @@ initFab();
     <!-- AGGIUNGI NUOVA -->
     <div style="background:var(--off);border-radius:14px;padding:14px;margin-bottom:18px;border:2px solid var(--gr2)">
       <div class="m-lbl" style="margin-bottom:8px">Nuova categoria</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
         <input class="m-inp" id="newCatName" placeholder="Nome categoria..." style="flex:1"/>
         <input class="m-inp" id="newCatEmoji" placeholder="🏷️" style="width:60px;text-align:center;font-size:20px"/>
+      </div>
+      <div id="newCatNameVoiceBtn"
+        onmousedown="newCatNamePressStart(event)" onmouseup="newCatNamePressStop(event)" onmouseleave="newCatNamePressStop(event)"
+        ontouchstart="newCatNamePressStart(event)" ontouchend="newCatNamePressStop(event)" ontouchcancel="newCatNamePressStop(event)"
+        style="background:var(--or);color:#fff;border-radius:12px;padding:10px;
+        font-family:Lato,sans-serif;font-size:13px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;gap:8px;
+        cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;margin-bottom:12px">
+        🎙️ Tieni premuto per dire il nome
       </div>
       <div class="m-lbl" style="margin-bottom:8px">Parole chiave (separate da virgola)</div>
       <input class="m-inp" id="newCatKeywords" placeholder="es. sushi, gyoza, ramen..." style="margin-bottom:8px"/>
