@@ -694,26 +694,33 @@ var CAT_KEYWORDS = {
 };
 
 function guessCat(name) {
-  var n = name.toLowerCase();
+  var n = (name || '').toLowerCase().trim();
+  if (!n) return null;
   // Carica anche keyword extra salvate dall utente
-    var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
-  defaultEl.innerHTML = '';
-  CATS.filter(function(c){ return !c.isCustom; }).forEach(function(c) {
-    var extra = (extraKw[c.name]||[]).join(', ');
-    var div = document.createElement('div');
-    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gr2);border-radius:12px;margin-bottom:8px';
-    div.innerHTML = '<span style="font-size:18px">' + c.emoji + '</span>' +
-      '<div style="flex:1">' +
-        '<div style="font-size:13px;font-weight:700;color:var(--mid)">' + c.name + '</div>' +
-        (extra ? '<div style="font-size:11px;color:var(--or);margin-top:2px">+' + extra + '</div>' : '<div style="font-size:11px;color:var(--gr);margin-top:1px">Tocca ✏️ per aggiungere parole chiave</div>') +
-      '</div>';
-    var btn = document.createElement('button');
-    btn.textContent = '✏️';
-    btn.style.cssText = 'background:var(--off);border:2px solid var(--gr2);color:var(--or);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer';
-    btn.addEventListener('click', (function(name){ return function(){ editCatKeywords(name); }; })(c.name));
-    div.appendChild(btn);
-    defaultEl.appendChild(div);
-  });
+  var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
+
+  // 1) Controllo prima le categorie base con eventuali keyword extra
+  for (var catName in CAT_KEYWORDS) {
+    var kws = CAT_KEYWORDS[catName].slice();
+    if (extraKw[catName]) kws = kws.concat(extraKw[catName]);
+    for (var i = 0; i < kws.length; i++) {
+      var kw = (kws[i] || '').toLowerCase().trim();
+      if (kw && n.indexOf(kw) !== -1) return catName;
+    }
+  }
+
+  // 2) Controllo categorie custom (definite solo via extraKw o CATS isCustom)
+  for (var catName2 in extraKw) {
+    if (!CAT_KEYWORDS[catName2]) {
+      var kws2 = extraKw[catName2] || [];
+      for (var j = 0; j < kws2.length; j++) {
+        var kw2 = (kws2[j] || '').toLowerCase().trim();
+        if (kw2 && n.indexOf(kw2) !== -1) return catName2;
+      }
+    }
+  }
+
+  return null;
 }
 
 function vRimuovi(i) {
@@ -823,10 +830,16 @@ function vPressStop(e) {
   if (testo && testo.length > 1) {
     // split intelligente - rispetta parole composte
     var nomi = vSplitIntelligente(testo);
+    var defaultCat = (typeof CATS !== 'undefined' && CATS[0]) ? CATS[0].name : 'Colazione';
     nomi.forEach(function(nome) {
       if (nome.length > 1) {
         nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-        vListaItems.push({ name: nome, cat: guessCat(nome) || 'Pranzo' });
+        var cat = guessCat(nome);
+        vListaItems.push({
+          name: nome,
+          cat: cat || defaultCat,
+          catManuale: cat !== null
+        });
       }
     });
     vRenderLista();
@@ -1013,10 +1026,11 @@ function kbAggiungi() {
   // Splitta e assegna categoria automatica (stessa logica del vocale)
   var nomi = vSplitIntelligente(testo);
   if (!nomi.length) nomi = [testo];
+  var defaultCat = (typeof CATS !== 'undefined' && CATS[0]) ? CATS[0].name : 'Colazione';
   nomi.forEach(function(nome) {
     nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
     var cat = guessCat(nome);
-    vListaItems.push({ name: nome, cat: cat || 'Pranzo', catManuale: cat !== null });
+    vListaItems.push({ name: nome, cat: cat || defaultCat, catManuale: cat !== null });
   });
   vRenderLista();
   inp.value = '';
