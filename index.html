@@ -726,6 +726,37 @@ var vRecog = null;
 var vListening = false;
 var vTestoAccumulato = '';
 var vRisultatiSalvati = []; // ogni finale salvato subito
+var vListaItems = [];
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+/* Render della lista provvisoria dentro il modal vocale */
+function vRenderLista() {
+  var lista = document.getElementById('vLista');
+  var vuota = document.getElementById('vListaVuota');
+  var conferma = document.getElementById('vConfermaBtn');
+  if (!lista) return;
+  if (!vListaItems || vListaItems.length === 0) {
+    lista.innerHTML = '';
+    if (vuota) vuota.style.display = '';
+    if (conferma) conferma.style.display = 'none';
+    return;
+  }
+  if (vuota) vuota.style.display = 'none';
+  if (conferma) conferma.style.display = '';
+  lista.innerHTML = vListaItems.map(function(it, i) {
+    var catObj = (typeof CATS !== 'undefined') ? CATS.find(function(c){ return c.name === it.cat; }) : null;
+    var emoji = catObj ? catObj.emoji : '🏷️';
+    var color = catObj ? catObj.color : '#999';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--gr2);background:#fff">' +
+      '<span style="font-size:20px">' + emoji + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:14px;font-weight:700;color:var(--dk)">' + it.name + '</div>' +
+        '<div style="font-size:11px;color:' + color + ';font-weight:600;margin-top:2px">' + it.cat + '</div>' +
+      '</div>' +
+      '<button onclick="vRimuovi(' + i + ')" style="background:none;border:none;font-size:18px;color:#BBA898;cursor:pointer;padding:4px 6px">🗑️</button>' +
+    '</div>';
+  }).join('');
+}
 
 function vPressStart(e) {
   e.preventDefault();
