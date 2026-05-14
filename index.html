@@ -1113,19 +1113,42 @@ function saveCustomCats(cats) {
 
 // Aggiorna CATS array con le categorie custom
 function refreshCatsWithCustom() {
+  // Carica categorie custom e ordine custom
   var custom = loadCustomCats();
-  // Rimuovi eventuali custom precedenti e ri-aggiungi
-  var base = CATS.filter(function(c){ return !c.isCustom; });
-  custom.forEach(function(c){ base.push(c); });
-  // Sovrascrive CATS in place
+  var savedOrder = JSON.parse(localStorage.getItem('migross_cat_order') || 'null');
+
+  // Unisci predefinite + custom
+  var allCats = CATS.filter(function(c){ return !c.isCustom; }).slice();
+  custom.forEach(function(c){ allCats.push(c); });
+
+  // Applica ordine custom se esiste
+  if (savedOrder && savedOrder.length) {
+    var ordered = [];
+    var byName = {};
+    allCats.forEach(function(c){ byName[c.name] = c; });
+    savedOrder.forEach(function(name){
+      if (byName[name]) { ordered.push(byName[name]); delete byName[name]; }
+    });
+    // Aggiungi quelle nuove (non ancora in savedOrder) alla fine
+    Object.keys(byName).forEach(function(n){ ordered.push(byName[n]); });
+    allCats = ordered;
+  }
+
+  // Sovrascrive CATS
   CATS.length = 0;
-  base.forEach(function(c){ CATS.push(c); });
-  // Aggiorna anche CAT_KEYWORDS
+  allCats.forEach(function(c){ CATS.push(c); });
+
+  // Aggiorna CAT_KEYWORDS con quelle custom
   custom.forEach(function(c){
     if (c.keywords && c.keywords.length) {
       CAT_KEYWORDS[c.name] = c.keywords;
     }
   });
+}
+
+function saveCatOrder() {
+  var order = CATS.map(function(c){ return c.name; });
+  localStorage.setItem('migross_cat_order', JSON.stringify(order));
 }
 
 function openCatManager() {
@@ -1134,77 +1157,184 @@ function openCatManager() {
 }
 
 function renderCatManagerLists() {
-  var custom = loadCustomCats();
   var customEl = document.getElementById('customCatList');
   var defaultEl = document.getElementById('defaultCatList');
-  var extraKwAll = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
+  var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
+  var custom = loadCustomCats();
+  var customNames = {};
+  custom.forEach(function(c){ customNames[c.name] = true; });
 
-  if (!custom.length) {
-    customEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--gr);font-size:13px">Nessuna categoria personalizzata</div>';
-  } else {
-    customEl.innerHTML = '';
-    custom.forEach(function(c, i) {
-      var ownKw = (c.keywords||[]).join(', ');
-      var extra = (extraKwAll[c.name]||[]).join(', ');
-      var kwHtml;
-      if (ownKw && extra) {
-        kwHtml = ownKw + ', <span style="color:var(--or);font-weight:600">+' + extra + '</span>';
-      } else if (ownKw) {
-        kwHtml = ownKw;
-      } else if (extra) {
-        kwHtml = '<span style="color:var(--or);font-weight:600">+' + extra + '</span>';
-      } else {
-        kwHtml = '<span style="color:var(--gr)">Tocca ✏️ per aggiungere parole chiave</span>';
-      }
-
-      var row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--off);border-radius:12px;margin-bottom:8px;border:2px solid var(--gr2)';
-
-      var info = document.createElement('div');
-      info.style.cssText = 'flex:1;min-width:0';
-      info.innerHTML =
-        '<div style="font-size:14px;font-weight:700;color:var(--dk)">' +
-          '<span style="font-size:18px;margin-right:6px">' + (c.emoji||'🏷️') + '</span>' + c.name +
-        '</div>' +
-        '<div style="font-size:11px;margin-top:2px">' + kwHtml + '</div>';
-
-      var editBtn = document.createElement('button');
-      editBtn.textContent = '✏️';
-      editBtn.style.cssText = 'background:#fff;border:2px solid var(--gr2);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0';
-      editBtn.addEventListener('click', (function(n){ return function(){ editCatKeywords(n); }; })(c.name));
-
-      var delBtn = document.createElement('button');
-      delBtn.textContent = '🗑️';
-      delBtn.style.cssText = 'background:#fff0f0;border:none;color:#c0392b;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0';
-      delBtn.addEventListener('click', (function(idx){ return function(){ eliminaCategoria(idx); }; })(i));
-
-      row.appendChild(info);
-      row.appendChild(editBtn);
-      row.appendChild(delBtn);
-      customEl.appendChild(row);
-    });
+  // UNICA LISTA - tutte le categorie nell ordine corrente di CATS
+  // Nasconde defaultEl (non lo usiamo più)
+  defaultEl.innerHTML = '';
+  defaultEl.style.display = 'none';
+  // Nasconde anche il titolo "Categorie predefinite"
+  var defaultTitle = defaultEl.previousElementSibling;
+  if (defaultTitle && defaultTitle.classList.contains('m-lbl')) {
+    defaultTitle.style.display = 'none';
   }
 
-  var extraKw2 = extraKwAll;
-  defaultEl.innerHTML = '';
-  CATS.filter(function(c){ return !c.isCustom; }).forEach(function(cat) {
-    var extra = (extraKw2[cat.name]||[]).join(', ');
+  // Aggiorna il titolo della sezione custom
+  var customTitle = customEl.previousElementSibling;
+  if (customTitle && customTitle.classList.contains('m-lbl')) {
+    customTitle.textContent = 'Le tue categorie (trascina per riordinare)';
+    customTitle.style.display = '';
+  }
+
+  customEl.innerHTML = '';
+  customEl.style.display = '';
+
+  CATS.forEach(function(cat, idx) {
+    var extra = (extraKw[cat.name] || []).join(', ');
+    var isCustom = customNames[cat.name] === true;
+
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gr2);border-radius:12px;margin-bottom:8px';
+    row.className = 'cat-row';
+    row.dataset.idx = idx;
+    row.dataset.name = cat.name;
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px;background:var(--off);border-radius:12px;margin-bottom:8px;border:2px solid var(--gr2);transition:all .15s;touch-action:none';
+
+    // Drag handle (≡)
+    var handle = document.createElement('div');
+    handle.textContent = '≡';
+    handle.style.cssText = 'font-size:22px;color:var(--gr);cursor:grab;padding:4px 8px;user-select:none;-webkit-user-select:none;touch-action:none;flex-shrink:0';
+    handle.className = 'cat-drag-handle';
+    row.appendChild(handle);
+
+    // Emoji + nome
     var info = document.createElement('div');
-    info.style.flex = '1';
+    info.style.cssText = 'flex:1;min-width:0';
     info.innerHTML = '<span style="font-size:18px">' + cat.emoji + '</span> ' +
-      '<span style="font-size:13px;font-weight:700;color:var(--mid)">' + cat.name + '</span>' +
-      (extra ? '<div style="font-size:11px;color:var(--or);margin-top:2px">+' + extra + '</div>' :
-               '<div style="font-size:11px;color:var(--gr);margin-top:1px">Tocca ✏️ per aggiungere parole chiave</div>');
+      '<span style="font-size:14px;font-weight:700;color:var(--dk)">' + cat.name + '</span>' +
+      (extra ? '<div style="font-size:11px;color:var(--or);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">+' + extra + '</div>' :
+               '<div style="font-size:11px;color:var(--gr);margin-top:2px">Tocca ✏️ per parole chiave</div>');
+    row.appendChild(info);
+
+    // Tasto modifica
     var editBtn = document.createElement('button');
     editBtn.textContent = '✏️';
-    editBtn.style.cssText = 'background:var(--off);border:2px solid var(--gr2);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0';
-    editBtn.addEventListener('click', (function(n){ return function(){ editCatKeywords(n); }; })(cat.name));
-    row.appendChild(info);
+    editBtn.type = 'button';
+    editBtn.style.cssText = 'background:var(--off);border:2px solid var(--gr2);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0';
+    editBtn.addEventListener('click', (function(n){ return function(ev){ ev.stopPropagation(); editCatKeywords(n); }; })(cat.name));
     row.appendChild(editBtn);
-    defaultEl.appendChild(row);
+
+    // Tasto elimina (solo per custom)
+    if (isCustom) {
+      var delBtn = document.createElement('button');
+      delBtn.textContent = '🗑️';
+      delBtn.type = 'button';
+      delBtn.style.cssText = 'background:#fff0f0;border:2px solid #ffd0d0;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0';
+      delBtn.addEventListener('click', (function(n){ return function(ev){ ev.stopPropagation(); eliminaCategoriaByName(n); }; })(cat.name));
+      row.appendChild(delBtn);
+    }
+
+    customEl.appendChild(row);
   });
+
+  // Inizializza drag & drop
+  enableCatDragDrop();
+}
+
+// ── DRAG & DROP categorie ──────────────────────────────────────
+function enableCatDragDrop() {
+  var container = document.getElementById('customCatList');
+  if (!container) return;
+  var rows = container.querySelectorAll('.cat-row');
+  var dragging = null;
+  var startY = 0;
+  var initialOffset = 0;
+  var placeholder = null;
+
+  rows.forEach(function(row) {
+    var handle = row.querySelector('.cat-drag-handle');
+    if (!handle) return;
+
+    function startDrag(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = row;
+      var rect = row.getBoundingClientRect();
+      var clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+      startY = clientY;
+      initialOffset = rect.top;
+      row.style.zIndex = '1000';
+      row.style.background = '#fff';
+      row.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)';
+      row.style.opacity = '.95';
+      row.style.transform = 'scale(1.02)';
+      handle.style.cursor = 'grabbing';
+    }
+    function moveDrag(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      var clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+      var deltaY = clientY - startY;
+      dragging.style.transform = 'translateY(' + deltaY + 'px) scale(1.02)';
+
+      // Trova la riga sopra cui siamo
+      var allRows = Array.from(container.querySelectorAll('.cat-row'));
+      var draggingIdx = allRows.indexOf(dragging);
+      var dragRect = dragging.getBoundingClientRect();
+      var dragMiddle = dragRect.top + dragRect.height/2;
+
+      allRows.forEach(function(r, i) {
+        if (r === dragging) return;
+        var rRect = r.getBoundingClientRect();
+        var rMiddle = rRect.top + rRect.height/2;
+        if (i < draggingIdx && dragMiddle < rMiddle) {
+          container.insertBefore(dragging, r);
+          startY = clientY;
+          dragging.style.transform = 'translateY(0) scale(1.02)';
+        } else if (i > draggingIdx && dragMiddle > rMiddle) {
+          container.insertBefore(dragging, r.nextSibling);
+          startY = clientY;
+          dragging.style.transform = 'translateY(0) scale(1.02)';
+        }
+      });
+    }
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging.style.zIndex = '';
+      dragging.style.background = 'var(--off)';
+      dragging.style.boxShadow = '';
+      dragging.style.opacity = '';
+      dragging.style.transform = '';
+      handle.style.cursor = 'grab';
+      dragging = null;
+
+      // Salva il nuovo ordine
+      var newOrder = Array.from(container.querySelectorAll('.cat-row')).map(function(r){
+        return r.dataset.name;
+      });
+      // Aggiorna CATS array
+      var catsByName = {};
+      CATS.forEach(function(c){ catsByName[c.name] = c; });
+      CATS.length = 0;
+      newOrder.forEach(function(n){ if (catsByName[n]) CATS.push(catsByName[n]); });
+      // Salva ordine
+      saveCatOrder();
+      // Aggiorna la lista principale
+      render();
+    }
+
+    handle.addEventListener('mousedown', startDrag);
+    handle.addEventListener('touchstart', startDrag, {passive: false});
+    document.addEventListener('mousemove', moveDrag);
+    document.addEventListener('touchmove', moveDrag, {passive: false});
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchcancel', endDrag);
+  });
+}
+
+function eliminaCategoriaByName(name) {
+  if (!confirm('Eliminare la categoria "' + name + '"?')) return;
+  var custom = loadCustomCats();
+  custom = custom.filter(function(c){ return c.name !== name; });
+  saveCustomCats(custom);
+  refreshCatsWithCustom();
+  renderCatManagerLists();
+  render();
 }
 
 var newCatNameAccumulato = '';
@@ -1338,8 +1468,9 @@ function aggiungiCategoria() {
   document.getElementById('newCatEmoji').value = '';
   document.getElementById('newCatKeywords').value = '';
 
+  saveCatOrder(); // salva nuovo ordine includendo la nuova
   renderCatManagerLists();
-  render(); // aggiorna tabs
+  render();
   alert(emoji + ' ' + nome + ' aggiunta!');
 }
 
@@ -1700,7 +1831,7 @@ initFab();
     </div>
 
     <!-- LISTA CATEGORIE CUSTOM -->
-    <div class="m-lbl" style="margin-bottom:10px">Le tue categorie personalizzate</div>
+    <div class="m-lbl" style="margin-bottom:10px">Tutte le categorie (trascina ≡ per riordinare)</div>
     <div id="customCatList"></div>
 
     <!-- LISTA CATEGORIE DEFAULT -->
