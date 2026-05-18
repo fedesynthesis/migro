@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v32';
+const CACHE_NAME = 'migross-v33';
 const APP_SHELL = [
   './',
   './index.html',
@@ -24,6 +24,13 @@ self.addEventListener('activate', event => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+// Richiesta versione dalla pagina
+self.addEventListener('message', event => {
+  if (event.data === 'GET_VERSION' && event.ports[0]) {
+    event.ports[0].postMessage(CACHE_NAME);
+  }
 });
 
 // Fetch

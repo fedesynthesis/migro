@@ -214,7 +214,7 @@ header{
 <header>
   <div class="hdr-top">
     <div>
-      <div class="logo-eye">La tua lista della spesa</div>
+      <div class="logo-eye">La tua lista della spesa <span id="swVer" style="opacity:.5;font-weight:600"></span></div>
       <div class="logo">Spesa <span style="color:rgba(255,255,255,.55);font-weight:400">Migross</span></div>
     </div>
 
@@ -1865,7 +1865,19 @@ initFab();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('./sw.js')
-        .then(function(reg) { console.log('SW registrato'); })
+        .then(function(reg) {
+          console.log('SW registrato');
+          navigator.serviceWorker.ready.then(function(r) {
+            var sw = r.active;
+            if (!sw) return;
+            var ch = new MessageChannel();
+            ch.port1.onmessage = function(ev) {
+              var el = document.getElementById('swVer');
+              if (el && ev.data) el.textContent = ev.data.replace('migross-', '');
+            };
+            sw.postMessage('GET_VERSION', [ch.port2]);
+          });
+        })
         .catch(function(e) { console.log('SW non registrato (normale in dev):', e.message); });
     });
   }
