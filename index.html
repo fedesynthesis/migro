@@ -1401,92 +1401,145 @@ function renderCatManagerLists() {
 function enableCatDragDrop() {
   var container = document.getElementById('customCatList');
   if (!container) return;
-  var rows = container.querySelectorAll('.cat-row');
+  if (container._dragBound) return;   // listener delegato: una sola volta
+  container._dragBound = true;
+
   var dragging = null;
-  var startY = 0;
-  var initialOffset = 0;
-  var placeholder = null;
+  var handleEl = null;
+  var pointerStart = 0;   // clientY al pickup
+  var shift = 0;          // spostamento di layout accumulato dai riordini
+  var slot = 0;           // altezza riga + margine
+  var lastY = 0;
+  var rafId = 0;
 
-  rows.forEach(function(row) {
-    var handle = row.querySelector('.cat-drag-handle');
+  function clientYOf(e){ return e.touches ? e.touches[0].clientY : e.clientY; }
+
+  // FLIP: anima lo scivolamento delle righe non trascinate
+  function flip(mutate) {
+    var rows = Array.prototype.slice.call(container.querySelectorAll('.cat-row'));
+    var first = rows.map(function(r){ return r.getBoundingClientRect().top; });
+    mutate();
+    rows.forEach(function(r, i){
+      if (r === dragging) return;
+      var dy = first[i] - r.getBoundingClientRect().top;
+      if (!dy) return;
+      r.style.transition = 'none';
+      r.style.transform = 'translateY(' + dy + 'px)';
+      requestAnimationFrame(function(){
+        r.style.transition = 'transform .18s cubic-bezier(.2,.7,.3,1)';
+        r.style.transform = '';
+      });
+    });
+  }
+
+  function onDown(e) {
+    var handle = e.target.closest ? e.target.closest('.cat-drag-handle') : null;
     if (!handle) return;
+    var row = handle.closest('.cat-row');
+    if (!row) return;
+    e.preventDefault();
+    e.stopPropagation();
 
-    function startDrag(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      dragging = row;
-      var rect = row.getBoundingClientRect();
-      var clientY = (e.touches ? e.touches[0].clientY : e.clientY);
-      startY = clientY;
-      initialOffset = rect.top;
-      row.style.zIndex = '1000';
-      row.style.background = '#fff';
-      row.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)';
-      row.style.opacity = '.95';
-      row.style.transform = 'scale(1.02)';
-      handle.style.cursor = 'grabbing';
+    dragging = row;
+    handleEl = handle;
+    pointerStart = clientYOf(e);
+    shift = 0;
+    var rect = row.getBoundingClientRect();
+    slot = rect.height + 8;   // 8px = margin-bottom della riga
+
+    row.style.transition = 'none';   // niente lag: segue il dito 1:1
+    row.style.zIndex = '1000';
+    row.style.background = '#fff';
+    row.style.boxShadow = '0 12px 30px rgba(0,0,0,.22)';
+    row.style.transform = 'scale(1.03)';
+    row.style.borderColor = 'var(--or)';
+    handle.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    if (typeof vibrate === 'function') vibrate(12);
+
+    document.addEventListener('mousemove', onMove, {passive:false});
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+    document.addEventListener('touchcancel', onUp);
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    lastY = clientYOf(e);
+    if (rafId) return;
+    rafId = requestAnimationFrame(applyMove);
+  }
+
+  function applyMove() {
+    rafId = 0;
+    if (!dragging) return;
+    var deltaY = (lastY - pointerStart) - shift;
+    dragging.style.transform = 'translateY(' + deltaY + 'px) scale(1.03)';
+
+    var rows = Array.prototype.slice.call(container.querySelectorAll('.cat-row'));
+    var idx = rows.indexOf(dragging);
+    var dRect = dragging.getBoundingClientRect();
+    var dMid = dRect.top + dRect.height / 2;
+
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r === dragging) continue;
+      var rRect = r.getBoundingClientRect();
+      var rMid = rRect.top + rRect.height / 2;
+      if (i < idx && dMid < rMid) {
+        flip(function(){ container.insertBefore(dragging, r); });
+        shift -= slot;
+        dragging.style.transform = 'translateY(' + ((lastY - pointerStart) - shift) + 'px) scale(1.03)';
+        break;
+      } else if (i > idx && dMid > rMid) {
+        flip(function(){ container.insertBefore(dragging, r.nextSibling); });
+        shift += slot;
+        dragging.style.transform = 'translateY(' + ((lastY - pointerStart) - shift) + 'px) scale(1.03)';
+        break;
+      }
     }
-    function moveDrag(e) {
-      if (!dragging) return;
-      e.preventDefault();
-      var clientY = (e.touches ? e.touches[0].clientY : e.clientY);
-      var deltaY = clientY - startY;
-      dragging.style.transform = 'translateY(' + deltaY + 'px) scale(1.02)';
+  }
 
-      // Trova la riga sopra cui siamo
-      var allRows = Array.from(container.querySelectorAll('.cat-row'));
-      var draggingIdx = allRows.indexOf(dragging);
-      var dragRect = dragging.getBoundingClientRect();
-      var dragMiddle = dragRect.top + dragRect.height/2;
+  function onUp() {
+    if (!dragging) return;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    var row = dragging;
+    dragging = null;
 
-      allRows.forEach(function(r, i) {
-        if (r === dragging) return;
-        var rRect = r.getBoundingClientRect();
-        var rMiddle = rRect.top + rRect.height/2;
-        if (i < draggingIdx && dragMiddle < rMiddle) {
-          container.insertBefore(dragging, r);
-          startY = clientY;
-          dragging.style.transform = 'translateY(0) scale(1.02)';
-        } else if (i > draggingIdx && dragMiddle > rMiddle) {
-          container.insertBefore(dragging, r.nextSibling);
-          startY = clientY;
-          dragging.style.transform = 'translateY(0) scale(1.02)';
-        }
-      });
-    }
-    function endDrag(e) {
-      if (!dragging) return;
-      dragging.style.zIndex = '';
-      dragging.style.background = 'var(--off)';
-      dragging.style.boxShadow = '';
-      dragging.style.opacity = '';
-      dragging.style.transform = '';
-      handle.style.cursor = 'grab';
-      dragging = null;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchend', onUp);
+    document.removeEventListener('touchcancel', onUp);
+    document.body.style.userSelect = '';
+    if (handleEl) handleEl.style.cursor = 'grab';
+    if (typeof vibrate === 'function') vibrate(18);
 
-      // Salva il nuovo ordine
-      var newOrder = Array.from(container.querySelectorAll('.cat-row')).map(function(r){
-        return r.dataset.name;
-      });
-      // Aggiorna CATS array
-      var catsByName = {};
-      CATS.forEach(function(c){ catsByName[c.name] = c; });
-      CATS.length = 0;
-      newOrder.forEach(function(n){ if (catsByName[n]) CATS.push(catsByName[n]); });
-      // Salva ordine
-      saveCatOrder();
-      // Aggiorna la lista principale
-      render();
-    }
+    // Atterraggio morbido nella posizione finale
+    row.style.transition = 'transform .2s cubic-bezier(.2,.7,.3,1), box-shadow .2s ease';
+    row.style.transform = '';
+    row.style.boxShadow = '';
+    row.style.background = 'var(--off)';
+    row.style.borderColor = 'var(--gr2)';
+    row.style.zIndex = '';
+    setTimeout(function(){ row.style.transition = 'all .15s'; }, 220);
 
-    handle.addEventListener('mousedown', startDrag);
-    handle.addEventListener('touchstart', startDrag, {passive: false});
-    document.addEventListener('mousemove', moveDrag);
-    document.addEventListener('touchmove', moveDrag, {passive: false});
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchend', endDrag);
-    document.addEventListener('touchcancel', endDrag);
-  });
+    // Salva il nuovo ordine
+    var newOrder = Array.prototype.slice.call(container.querySelectorAll('.cat-row')).map(function(r){
+      return r.dataset.name;
+    });
+    var catsByName = {};
+    CATS.forEach(function(c){ catsByName[c.name] = c; });
+    CATS.length = 0;
+    newOrder.forEach(function(n){ if (catsByName[n]) CATS.push(catsByName[n]); });
+    saveCatOrder();
+    render();
+  }
+
+  container.addEventListener('mousedown', onDown);
+  container.addEventListener('touchstart', onDown, {passive:false});
 }
 
 function eliminaCategoriaByName(name) {
