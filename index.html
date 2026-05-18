@@ -678,45 +678,207 @@ function lanciaConfetti(){
 
 /* ─── VOICE ──────────────────────────────── */
 var CAT_KEYWORDS = {
-  'Colazione':['cereali','biscotti','merendine','latte','caffe','te','miele','marmellata','burro','granola','fette','croissant','brioche','colazione'],
-  'Cura corpo':['shampoo','bagnoschiuma','sapone','dentifricio','cotton','scottex','carta igienica','lacca','deodorante','crema','profumo','rasoi','gel','balsamo'],
-  'Verdure e frutta':['verdura','frutta','insalata','pomodoro','cipolla','aglio','patate','carote','zucchine','melanzane','peperoni','spinaci','broccoli','mela','pera','banana','arancia','limone','uva','fragole','anguria','melone'],
-  'Acqua':['acqua'],
-  'Sughi e pasta':['pasta','sughi','sugo','riso','lasagne','fusilli','spaghetti','penne','rigatoni','gnocchi','olio','sale','zucchero','farina','brodo','legumi','fagioli','ceci','lenticchie'],
-  'Zuppe e cibi pronti':['zuppa','zuppe','minestra','minestrone','vellutata','passato','crema verdure','piatto pronto','cibo pronto','pronto','farro','orzo','spelt','cereali pronti','soupe','lenticchie pronte'],
-  'Bibite e bevande':['bibite','bevande','succo','succhi','aranciata','coca','cola','fanta','sprite','birra','vino','prosecco','limonata','tonica'],
-  'Formaggi e affettati':['formaggio','prosciutto','salame','mortadella','bresaola','speck','pancetta','coppa','yogurt','uova','parmigiano','mozzarella','ricotta','grana','pecorino','scamorza'],
-  'Banco pesce':['pesce','salmone','tonno','branzino','orata','merluzzo','baccala','gamberi','calamari','vongole','cozze','frutti di mare','filetto pesce','pesce spada','trota'],
-  'Banco carne':['carne','pollo','manzo','maiale','agnello','vitello','tacchino','salsiccia','costine','bistecca','hamburger','fesa','petto pollo','fettine','braciole','spezzatino'],
-  'Pane':['pane','piadine','grissini','taralli','focaccia','ciabatta','baguette','crackers','fette biscottate'],
-  'Cibo gatti':['gatti','gatto','cibo gatti','whiskas','felix','lettiera','sabbia gatti'],
-  'Detersivi':['detersivo','acchiappa','candeggina','ammorbidente','lavastoviglie','lavatrice','spugna','guanti','sacchetti','pattumiera','vetri','pavimenti','dash','ariel','ace']
+  'Colazione': [
+    'cereali','corn flakes','muesli','granola','fiocchi avena','avena',
+    'biscotti','frollini','wafer','plumcake','crostatine','merendine','snack dolci','barrette',
+    'fette biscottate','cracker dolci',
+    'croissant','cornetti','brioche','brioches',
+    'pancake','pancakes','marmellata','confettura','miele','nutella','crema spalmabile','crema nocciole',
+    'burro','margarina',
+    'caffe','caffè','moka','cialde','capsule','nescafe',
+    'orzo','ginseng','cacao','cioccolato','cioccolato fondente','cioccolato latte',
+    'zollette','zucchero canna','zucchero bianco',
+    'cereali bambini','colazione','colazione bambini','digestive','grancereale','pavesini'
+  ],
+  'Cura corpo': [
+    'shampoo','balsamo','maschera capelli','tinta capelli',
+    'bagnoschiuma','sapone','sapone liquido','sapone neutro','doccia schiuma',
+    'dentifricio','spazzolino','collutorio','filo interdentale',
+    'cotton fioc','cotonfioc','dischetti struccanti','batuffoli cotone',
+    'scottex','salviette','salviettine','salviette intime',
+    'lacca','gel capelli','schiuma capelli','spuma',
+    'deodorante','antitraspirante','profumo','dopobarba','lozione dopobarba',
+    'crema','crema mani','crema viso','crema corpo','crema solare','solare','protezione solare',
+    'rasoio','rasoi','lamette','schiuma barba',
+    'pannolini','pannolini bambini','pannolini adulti',
+    'assorbenti','tamponi','salvaslip',
+    'pomata','pomate','cerotti','garza','disinfettante',
+    'carta igienica','rotoloni','veline','fazzoletti','fazzolettini'
+  ],
+  'Verdure e frutta': [
+    'insalata','lattuga','rucola','radicchio','songino','valeriana','spinaci',
+    'pomodori','pomodorini','datterini','ciliegini','cuori di bue','pachino',
+    'cipolla','cipolle','cipollotti','scalogno','aglio','porro','porri',
+    'patate','patate dolci','carote','sedano','finocchi','finocchio',
+    'zucchine','melanzane','peperoni','cetrioli','zucca',
+    'broccoli','cavolfiore','cavolo','cavolini','verza',
+    'fagiolini','piselli freschi','asparagi','funghi','funghi champignon','porcini',
+    'rape','rapanelli','ravanelli','barbabietole',
+    'mela','mele','pera','pere','banana','banane','arancia','arance','mandarini','clementine',
+    'limoni','limone','pompelmo','kiwi','kiwi gold',
+    'uva','uva bianca','uva nera','uvetta',
+    'fragole','lamponi','mirtilli','more','ribes','ciliegie','albicocche',
+    'pesche','pesche noci','nettarine','susine','prugne',
+    'anguria','melone','melone giallo','cocomero',
+    'ananas','mango','papaya','avocado','cocco',
+    'frutta secca','noci','mandorle','nocciole','pistacchi','anacardi','arachidi','noccioline','datteri','prugne secche','albicocche secche',
+    'verdura','frutta','frutta fresca','verdure miste','minestrone surgelato'
+  ],
+  'Acqua': [
+    'acqua','acqua naturale','acqua frizzante','acqua minerale','acqua leggermente frizzante','acqua effervescente',
+    'acqua piccola','acqua grande','acqua bottiglia','acqua casse'
+  ],
+  'Sughi e pasta': [
+    'pasta','spaghetti','spaghettoni','penne','fusilli','rigatoni','farfalle','linguine','tagliatelle','fettuccine',
+    'tortellini','tortelloni','ravioli','agnolotti','cappelletti','gnocchi','gnocchetti',
+    'lasagne','cannelloni','pasta integrale','pasta fresca','pasta secca','pasta senza glutine',
+    'pasta ripiena','orecchiette','conchiglie','mezze maniche','bucatini','pennette','mezzepenne',
+    'sugo','sughi','pesto','pesto genovese','pesto rosso','pomodoro pelati','passata','passata pomodoro','polpa pomodoro','sugo arrabbiata','sugo amatriciana','sugo carbonara','ragu','ragù','salsa pomodoro',
+    'riso','riso basmati','riso integrale','riso parboiled','riso carnaroli','riso arborio','riso lungo','riso venere','riso rosso',
+    'farro','orzo perlato','quinoa','cous cous','couscous','bulgur','grano saraceno',
+    'olio','olio oliva','olio extravergine','olio girasole','olio semi','aceto','aceto balsamico','aceto mele','aceto vino',
+    'sale','sale fino','sale grosso','sale rosa','pepe','pepe nero','pepe macinato','spezie','origano','basilico secco','rosmarino','timo','alloro','noce moscata','curry','paprika','peperoncino',
+    'farina','farina 00','farina integrale','farina manitoba','farina mais','polenta','semola','semolino',
+    'zucchero','zucchero a velo','zucchero canna','lievito','lievito madre','bicarbonato',
+    'legumi','fagioli','fagiolini','ceci','lenticchie','piselli','borlotti','cannellini',
+    'tonno','tonno olio','tonno acqua','sardine','sgombro','salmone scatoletta','filetti acciughe','acciughe','alici',
+    'mais','olive','olive nere','olive verdi','olive denocciolate','capperi','sottaceti','sottolio'
+  ],
+  'Zuppe e cibi pronti': [
+    'zuppa','zuppe','zuppa pronta','zuppa legumi','zuppa verdure','zuppa orzo','zuppa farro','zuppa funghi',
+    'minestra','minestrone','minestrina','passato','passato verdure',
+    'vellutata','crema verdure','crema asparagi','crema zucca',
+    'piatto pronto','piatti pronti','cibi pronti','cibo pronto','pronto cuoci',
+    'pizza surgelata','pizze surgelate','pizza margherita','lasagne pronte','lasagna pronta',
+    'cotolette pronte','polpette pronte','spinacine','sofficini','würstel pronti',
+    'insalata pronta','insalata busta','insalata gastronomia',
+    'tortellini brodo','riso pronto','quinoa pronta',
+    'sugo pronto','pasta ripiena fresca'
+  ],
+  'Bibite e bevande': [
+    'bibite','bevande','coca cola','cocacola','coca','pepsi','fanta','sprite','seven up','7up','schweppes','aranciata','chinotto','gassosa','cedrata','tassoni',
+    'succo','succhi','succo arancia','succo mela','succo pesca','succo pera','succo ace','succo multivitaminico','nettare','nettari',
+    'tè freddo','tè limone','tè pesca','the freddo','estate','lipton',
+    'limonata','tonica','acqua tonica','red bull','energy drink','gatorade','powerade',
+    'birra','birra chiara','birra rossa','birra bionda','birra scura','birra analcolica','birra artigianale','peroni','heineken','moretti','ichnusa',
+    'vino','vino rosso','vino bianco','vino rose','vino rosato','prosecco','spumante','champagne','barolo','chianti',
+    'amaro','amari','grappa','vodka','rum','gin','whisky','whiskey','liquore','liquori','aperol','campari','martini',
+    'aperitivo','spritz','vermut'
+  ],
+  'Formaggi e affettati': [
+    'formaggio','formaggi','parmigiano','parmigiano reggiano','grana','grana padano','pecorino','pecorino romano',
+    'mozzarella','mozzarella bufala','mozzarella fiordilatte','burrata','stracciatella','scamorza','provolone','provola','caciotta','asiago','fontina','taleggio','gorgonzola','crescenza','stracchino','robiola','ricotta','mascarpone',
+    'philadelphia','formaggini','sottilette','feta','emmental','gruyere','cheddar','brie','camembert','edam','manchego',
+    'prosciutto','prosciutto cotto','prosciutto crudo','prosciutto san daniele','prosciutto parma','speck','bresaola','mortadella','salame','salame milano','salame napoli','salame ungherese',
+    'pancetta','pancetta affumicata','coppa','capocollo','lardo','culatello','wurstel','würstel','salsiccia secca',
+    'tacchino affettato','pollo affettato','arrosto tacchino','arrosto pollo','roast beef',
+    'yogurt','yogurt greco','yogurt bianco','yogurt fragola','yogurt frutta','yogurt magro','kefir','panna','panna fresca','panna montata','panna cucina',
+    'uova','uovo','uova biologiche','uova fresche','uova grandi'
+  ],
+  'Banco pesce': [
+    'pesce','pesce fresco','pesce surgelato','filetto pesce','filetto merluzzo','filetto branzino','filetto orata','filetto salmone','filetti platessa',
+    'salmone','salmone affumicato','salmone fresco','tonno fresco','branzino','orata','spigola','dentice','sogliola','platessa','merluzzo','nasello','rombo','trota','trota salmonata','pesce spada','spada','sgombro','sarde','sardine fresche','alici fresche','acciughe fresche',
+    'gamberi','gamberetti','gamberoni','mazzancolle','scampi','astice','aragosta','granchio',
+    'calamari','seppie','polpo','polipo','moscardini','totani','calamaretti',
+    'vongole','cozze','ostriche','tellini','telline','arselle','frutti di mare','mix mare','sauté frutti mare',
+    'baccala','baccalà','stoccafisso','bocconcini pesce','pesce panato'
+  ],
+  'Banco carne': [
+    'carne','carne fresca','carne macinata','macinato','manzo','vitello','vitellone','maiale','agnello','capretto','cavallo',
+    'pollo','petto pollo','cosce pollo','sovracosce pollo','ali pollo','pollo intero','tacchino','fesa tacchino','petto tacchino','straccetti tacchino',
+    'bistecca','bistecche','fiorentina','tagliata','filetto manzo','controfiletto','entrecote','costata','roast beef carne',
+    'fettine','scaloppine','spezzatino','bocconcini','arrosto','arrosto vitello','arrosto manzo','girello','noce','sottofesa',
+    'salsiccia','salsicce','luganega','salamelle','costine','costicine','puntine','braciole','braciola','nodini',
+    'hamburger','hamburger manzo','hamburger pollo','polpette','polpettone','cotolette','cotoletta','milanese',
+    'coniglio','anatra','quaglia','faraona','tartare'
+  ],
+  'Pane': [
+    'pane','pane fresco','pane casereccio','pane integrale','pane bianco','pane ai cereali','pane nero','pane segale','pane semola','pane casa',
+    'piadina','piadine','tigelle','focaccia','schiacciata','pane carasau','pane arabo','pita','tortilla',
+    'grissini','grissini torinesi','taralli','crackers','cracker','crostini','bruschette','fette biscottate',
+    'baguette','ciabatta','rosette','michette','panini','panini hamburger','panini hotdog','pan bauletto','pancarrè','pan brioche','pane cassetta',
+    'piadina romagnola','piadinas','tortillas','pita greca','naan','pizza bianca','focaccia genovese'
+  ],
+  'Cibo gatti': [
+    'cibo gatti','cibo gatto','crocchette gatti','crocchette gatto','umido gatti','umido gatto','bustine gatti','bustine gatto','scatolette gatti','scatolette gatto',
+    'whiskas','felix','gourmet','sheba','friskies','kitekat','schesir','almo nature','natural trainer','royal canin','hills',
+    'lettiera','lettiera gatti','sabbia gatti','sabbietta','sabbia agglomerante',
+    'snack gatti','treats gatti','tiragraffi','giochi gatto',
+    'cibo cani','crocchette cani','umido cani','snack cani','biscotti cani','osso cane','guinzaglio','pedigree','cesar','rocco','monge'
+  ],
+  'Detersivi': [
+    'detersivo','detersivi','detersivo lavatrice','detersivo lavastoviglie','detersivo piatti','detersivo bucato','detersivo pavimenti','detersivo vetri','detersivo bagno','detersivo cucina',
+    'ammorbidente','acchiappa colore','sbiancante','candeggina','varechina','smacchiatore','smacchiatori','pretrattante',
+    'pastiglie lavastoviglie','tabs lavastoviglie','brillantante','sale lavastoviglie',
+    'dixan','dash','perlana','perwoll','vernel','coccolino','viakal','cif','ace','lysoform','svelto','nelsen','finish','calgon',
+    'spugna','spugne','spugnette','panni','panno cattura polvere','straccio','strofinaccio','strofinacci','panni microfibra',
+    'guanti','guanti gomma','guanti lattice','guanti monouso',
+    'sacchetti','sacchetti spazzatura','sacchetti pattumiera','sacchetti umido','sacchetti freezer','sacchetti frigo','sacchetti aspirapolvere','sacchi neri','sacchi gialli',
+    'pattumiera','scopa','paletta','straccio pavimenti','mocio','vileda',
+    'profumatori','deodorante ambiente','spray ambiente','vape','zampironi','insetticida','antitarme','antimosche',
+    'vetri','pavimenti','sgrassatore','anticalcare','mr muscolo','chante clair'
+  ]
 };
 
 function guessCat(name) {
   var n = (name || '').toLowerCase().trim();
   if (!n) return null;
-  // Carica anche keyword extra salvate dall utente
+
+  // Normalizza in parole separate (per match a confine di parola)
+  // Sostituisce trattini, virgole ecc con spazi per il match
+  var nWords = ' ' + n.replace(/[^a-zà-ÿ0-9\s]/gi, ' ').replace(/\s+/g, ' ') + ' ';
+
+  // Funzione che verifica match con parola COMPLETA o INIZIO parola
+  // Una keyword matcha se:
+  // - è una parola intera nel nome (es "auto" matcha "deodorante auto")
+  // - è multi-parola e compare come substring (es "cibo gatti")
+  // - è il prefisso di una parola lunga almeno 4 caratteri (es "pomodor" matcha "pomodorini")
+  function matches(kw) {
+    if (!kw) return false;
+    kw = kw.toLowerCase().trim();
+    if (!kw) return false;
+    // Multi-parola: usa substring
+    if (kw.indexOf(' ') !== -1) {
+      return n.indexOf(kw) !== -1;
+    }
+    // Parola singola: deve essere una parola intera o prefisso lungo
+    // Cerca " kw " (parola intera)
+    if (nWords.indexOf(' ' + kw + ' ') !== -1) return true;
+    // Cerca " kw" come prefisso di una parola (solo se kw è almeno 4 char)
+    if (kw.length >= 4) {
+      // Trova ogni parola in nWords e verifica se inizia con kw
+      var words = nWords.trim().split(/\s+/);
+      for (var w = 0; w < words.length; w++) {
+        if (words[w].indexOf(kw) === 0 && words[w].length >= kw.length) return true;
+      }
+    }
+    return false;
+  }
+
   var extraKw = JSON.parse(localStorage.getItem('migross_extra_kw') || '{}');
 
-  // 1) Controllo prima le categorie base con eventuali keyword extra
-  for (var catName in CAT_KEYWORDS) {
-    var kws = CAT_KEYWORDS[catName].slice();
-    if (extraKw[catName]) kws = kws.concat(extraKw[catName]);
-    for (var i = 0; i < kws.length; i++) {
-      var kw = (kws[i] || '').toLowerCase().trim();
-      if (kw && n.indexOf(kw) !== -1) return catName;
+  // 1) Priorità ALTA: keyword utente (extraKw) — cerca PRIMA tra quelle definite dall utente
+  for (var catName in extraKw) {
+    var ukws = extraKw[catName] || [];
+    for (var u = 0; u < ukws.length; u++) {
+      if (matches(ukws[u])) return catName;
     }
   }
 
-  // 2) Controllo categorie custom (definite solo via extraKw o CATS isCustom)
-  for (var catName2 in extraKw) {
-    if (!CAT_KEYWORDS[catName2]) {
-      var kws2 = extraKw[catName2] || [];
-      for (var j = 0; j < kws2.length; j++) {
-        var kw2 = (kws2[j] || '').toLowerCase().trim();
-        if (kw2 && n.indexOf(kw2) !== -1) return catName2;
-      }
+  // 2) Categorie custom create (con loro keyword)
+  var custom = JSON.parse(localStorage.getItem('migross_custom_cats') || '[]');
+  for (var cc = 0; cc < custom.length; cc++) {
+    var ckws = custom[cc].keywords || [];
+    for (var ck = 0; ck < ckws.length; ck++) {
+      if (matches(ckws[ck])) return custom[cc].name;
+    }
+  }
+
+  // 3) Categorie predefinite (CAT_KEYWORDS)
+  for (var catName2 in CAT_KEYWORDS) {
+    var kws = CAT_KEYWORDS[catName2];
+    for (var i = 0; i < kws.length; i++) {
+      if (matches(kws[i])) return catName2;
     }
   }
 
