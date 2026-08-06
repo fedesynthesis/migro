@@ -217,7 +217,10 @@ header{
       <div class="logo-eye">La tua lista della spesa <span id="swVer" style="opacity:.5;font-weight:600"></span></div>
       <div class="logo">Spesa <span style="color:rgba(255,255,255,.55);font-weight:400">Migross</span></div>
     </div>
-
+    <div id="syncPill" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:#2A1500;font-size:11px;font-weight:700;font-family:'Lato',sans-serif;padding:5px 11px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap">
+      <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#e0b000;transition:background .3s"></span>
+      <span id="syncTxt">Sync…</span>
+    </div>
   </div>
   <div class="prog-strip" style="position:relative">
     <div style="display:flex;align-items:center;gap:12px;flex:1">
@@ -1988,6 +1991,106 @@ refreshCatsWithCustom();
 render();
 checkReminder();
 initFab();
+
+/* ================= Sincronizzazione Firebase (due telefoni) =================
+   Una sola lista spesa condivisa in un percorso segreto (niente login).
+   Si sincronizzano la lista articoli (migross_v1) e le categorie personalizzate
+   (migross_custom_cats). Ordine categorie, parole-chiave vocali e promemoria
+   restano locali al telefono. L'app funziona comunque offline dal localStorage. */
+const FB_CONFIG = {
+  apiKey:            "AIzaSyDLbGyLrPaw3tQXY3HOaTxWJLnOWPUjvXU",
+  authDomain:        "cicogna-57ae0.firebaseapp.com",
+  projectId:         "cicogna-57ae0",
+  storageBucket:     "cicogna-57ae0.firebasestorage.app",
+  messagingSenderId: "1013139034396",
+  appId:             "1:1013139034396:web:4770893e05130ca600aad9"
+};
+// Percorso segreto della lista condivisa (diverso da Cicogna: liste separate).
+const M_COL = "rIZU2sZHGgWrWHf37peFEnSj";
+const M_DOC = "22HYhCPNen3PqISCNe0HgeO4";
+const M_INIT = "migross_sync_init";
+
+let FB=null, fdoc=null, fbReady=false, pendingWrite=false, dirty=false, pushTimer=null;
+
+function setConn(kind,label){
+  var d=document.getElementById('syncDot'), t=document.getElementById('syncTxt');
+  var col={on:'#2f9e44',wait:'#e0b000',off:'#e03131'}[kind]||'#e0b000';
+  if(d) d.style.background=col;
+  if(t && label) t.textContent=label;
+}
+function readLS(k, def){ try{ var v=JSON.parse(localStorage.getItem(k)); return v==null?def:v; }catch(e){ return def; } }
+function snapshotData(){ return { items: readLS('migross_v1', []), customCats: readLS('migross_custom_cats', []) }; }
+
+function scheduleCloudPush(){ if(!fbReady) return; dirty=true; clearTimeout(pushTimer); pushTimer=setTimeout(cloudPush, 600); }
+async function cloudPush(){
+  if(!fbReady) return;
+  pendingWrite=true;
+  try{ await FB.setDoc(fdoc, snapshotData()); dirty=false; }
+  catch(e){ console.warn("Sync: scrittura fallita", e); }
+  finally{ pendingWrite=false; }
+}
+
+/* Scrive i dati ricevuti dal server nel localStorage e rinfresca la UI.
+   NON passa da save() → non ri-scatena un push (niente loop). */
+function applyData(data){
+  if(Array.isArray(data.items))      localStorage.setItem('migross_v1', JSON.stringify(data.items));
+  if(Array.isArray(data.customCats)) localStorage.setItem('migross_custom_cats', JSON.stringify(data.customCats));
+  load(); refreshCatsWithCustom(); render();
+}
+
+/* Fusione senza perdite: solo alla PRIMA sincronizzazione di questo telefono. */
+function mergeUnion(localD, serverD){
+  var map=new Map();
+  (serverD.items||[]).concat(localD.items||[]).forEach(function(it){
+    if(!it) return;
+    var key=(it.cat||'')+'|'+(it.name||'');
+    if(!map.has(key)) map.set(key, Object.assign({}, it));
+    else { var e=map.get(key); e.done = e.done || it.done; }   // spuntato se lo è su almeno un telefono
+  });
+  var items=Array.from(map.values()).map(function(it,i){ it.id=i; return it; });
+  var cmap=new Map();
+  (serverD.customCats||[]).concat(localD.customCats||[]).forEach(function(c){
+    if(c && c.name && !cmap.has(c.name)) cmap.set(c.name, c);
+  });
+  return { items: items, customCats: Array.from(cmap.values()) };
+}
+
+async function initSync(){
+  try{
+    setConn('wait','Connessione…');
+    var appMod = await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js");
+    FB         = await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js");
+    var app = appMod.initializeApp(FB_CONFIG);
+    fdoc = FB.doc(FB.getFirestore(app), M_COL, M_DOC);
+    fbReady = true;
+    FB.onSnapshot(fdoc, { includeMetadataChanges:true },
+      function(snap){
+        if(snap.metadata.fromCache){ setConn('wait','Offline · solo questo telefono'); return; }
+        setConn('on','Sincronizzato ✓');
+        if(pendingWrite || dirty) return;              // modifiche mie in corso: non le sovrascrivo
+        var data = snap.exists() ? snap.data() : null;
+        var first = !localStorage.getItem(M_INIT);
+        if(!data){ cloudPush(); }                       // server vuoto → semino da questo telefono
+        else if(first){ applyData(mergeUnion(snapshotData(), data)); cloudPush(); } // fusione senza perdite
+        else { applyData(data); }                       // poi il server è la verità condivisa
+        localStorage.setItem(M_INIT,'1');
+      },
+      function(err){ setConn('off','Sync non disponibile'); console.error("Sync:", err); }
+    );
+  }catch(e){
+    setConn('off','Sync non disponibile');
+    console.warn("Sync non attivo (l'app resta usabile in locale):", e);
+  }
+}
+
+/* Aggancio ai salvataggi esistenti: ogni modifica locale spinge in cloud (con debounce). */
+(function(){
+  var _saveItems = save;
+  save = function(){ _saveItems.apply(this, arguments); scheduleCloudPush(); };
+  var _saveCats = saveCustomCats;
+  saveCustomCats = function(){ _saveCats.apply(this, arguments); scheduleCloudPush(); };
+})();
+initSync();
 </script>
 
 <script>

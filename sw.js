@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v35';
+const CACHE_NAME = 'migross-v36';
 const APP_SHELL = [
   './',
   './index.html',
@@ -37,6 +37,12 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
+
+  // NON intercettare Firebase/Firestore: sempre rete diretta, mai cache
+  // (altrimenti la cache romperebbe la sincronizzazione in tempo reale).
+  if (/firestore\.googleapis\.com|firebaseinstallations\.googleapis\.com|firebase\.googleapis\.com|firebaseremoteconfig\.googleapis\.com|gstatic\.com\/firebasejs/.test(req.url)) {
+    return;
+  }
 
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
