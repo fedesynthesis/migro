@@ -161,6 +161,10 @@ header{
 .vov{display:none;position:fixed;inset:0;z-index:300;background:rgba(42,21,0,.7);align-items:flex-end;justify-content:center}
 .vov.open{display:flex;animation:fin .2s}
 .vcard{background:#fff;border-radius:26px 26px 0 0;padding:28px 22px 44px;width:100%;max-width:480px;animation:sup .28s cubic-bezier(.22,1,.36,1)}
+/* Tastiera iOS: il pannello si alza sopra la tastiera e resta scorrevole */
+.vov,.modal-bg{transition:padding-bottom .18s ease}
+.vcard,.modal{overflow-y:auto;-webkit-overflow-scrolling:touch}
+body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
 .vcard-top{text-align:center;margin-bottom:20px}
 .vcard-ico{font-size:40px;margin-bottom:8px;line-height:1}
 .vcard-title{font-family:'Lato',sans-serif;font-size:22px;font-weight:700;color:var(--dk);margin-bottom:4px}
@@ -2085,6 +2089,42 @@ async function initSync(){
     console.warn("Sync non attivo (l'app resta usabile in locale):", e);
   }
 }
+
+/* ===== Tastiera iOS: alza i pannelli invece di farli coprire =====
+   Su iPhone la tastiera copre gli elementi position:fixed ancorati in basso.
+   visualViewport dice quanto spazio occupa: alziamo il pannello di altrettanto
+   e limitiamo l'altezza della card, così il campo che si compila resta visibile. */
+(function(){
+  var vv = window.visualViewport;
+  if(!vv) return;                       // browser vecchi: comportamento invariato
+  var PANNELLI = '.vov, .modal-bg, #vCatPickerModal';
+
+  function aggiorna(){
+    var kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    var aperta = kb > 90;               // soglia: sotto è solo la barra di Safari
+    document.body.classList.toggle('kb-open', aperta);
+    var nodi = document.querySelectorAll(PANNELLI);
+    for (var i=0;i<nodi.length;i++){
+      var n = nodi[i];
+      n.style.paddingBottom = aperta ? kb + 'px' : '';
+      var card = n.querySelector('.vcard, .modal, div');
+      if (card) card.style.maxHeight = aperta ? (vv.height - 16) + 'px' : '';
+    }
+    // tiene in vista il campo che si sta compilando
+    var att = document.activeElement;
+    if (aperta && att && /INPUT|TEXTAREA|SELECT/.test(att.tagName)) {
+      try { att.scrollIntoView({block:'center', behavior:'smooth'}); } catch(e){}
+    }
+  }
+
+  vv.addEventListener('resize', aggiorna);
+  vv.addEventListener('scroll', aggiorna);
+  // al focus la tastiera impiega un attimo ad aprirsi
+  document.addEventListener('focusin', function(e){
+    if (/INPUT|TEXTAREA/.test(e.target.tagName)) { setTimeout(aggiorna, 120); setTimeout(aggiorna, 400); }
+  });
+  document.addEventListener('focusout', function(){ setTimeout(aggiorna, 180); });
+})();
 
 /* Aggancio ai salvataggi esistenti: ogni modifica locale spinge in cloud (con debounce). */
 (function(){
