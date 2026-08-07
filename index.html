@@ -262,19 +262,19 @@ body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
 #fabMenuBox.open{transform:translateY(0);opacity:1;visibility:visible}
 .fab-item{min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;border:none;background:none;cursor:pointer;padding:2px;font-family:'Lato',sans-serif;transition:transform .12s}
 .fab-item:active{transform:scale(.9)}
-.fab-ic{width:66px;height:66px;border-radius:50%;color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.24)}
+.fab-ic{width:66px;height:66px;border-radius:20px;color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.24)}
 .fab-cap{font-size:12px;font-weight:700;color:#2A1500;text-align:center;line-height:1.15}
 </style>
 
 <div id="fabContainer">
   <div id="fabMenuBox">
-    <!-- riga 1: azioni meno frequenti -->
+    <!-- riga 1: Svuota a sinistra, poi Fatto e Condividi -->
     <button type="button" class="fab-item" id="fabBtnClear"><span class="fab-ic" style="background:#c0392b">🗑️</span><span class="fab-cap">Svuota</span></button>
-    <button type="button" class="fab-item" id="fabBtnReminder"><span class="fab-ic" style="background:#7898C8">🔔</span><span class="fab-cap">Reminder</span></button>
-    <button type="button" class="fab-item" id="fabBtnCats"><span class="fab-ic" style="background:#8B6BAE">🗂️</span><span class="fab-cap">Categorie</span></button>
-    <!-- riga 2: le più usate; "Aggiungi" in basso a destra, sotto il + -->
     <button type="button" class="fab-item" id="fabBtnDone"><span class="fab-ic" style="background:#5a9e6e">✅</span><span class="fab-cap">Fatto</span></button>
     <button type="button" class="fab-item" id="fabBtnShare"><span class="fab-ic" style="background:#25D366">📤</span><span class="fab-cap">Condividi</span></button>
+    <!-- riga 2: "Aggiungi" in basso a destra, sotto il + -->
+    <button type="button" class="fab-item" id="fabBtnReminder"><span class="fab-ic" style="background:#7898C8">🔔</span><span class="fab-cap">Reminder</span></button>
+    <button type="button" class="fab-item" id="fabBtnCats"><span class="fab-ic" style="background:#8B6BAE">🗂️</span><span class="fab-cap">Categorie</span></button>
     <button type="button" class="fab-item" id="fabBtnVoice"><span class="fab-ic" style="background:#6B8F71">🎙️</span><span class="fab-cap">Aggiungi</span></button>
   </div>
   <button type="button" class="fab-main" id="fabMainBtn">＋</button>
