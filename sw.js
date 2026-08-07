@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v37';
+const CACHE_NAME = 'migross-v38';
 const APP_SHELL = [
   './',
   './index.html',
