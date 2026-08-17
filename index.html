@@ -163,7 +163,7 @@ header{
 .vcard{background:#fff;border-radius:26px 26px 0 0;padding:28px 22px 44px;width:100%;max-width:480px;animation:sup .28s cubic-bezier(.22,1,.36,1)}
 /* Tastiera iOS: il pannello si alza sopra la tastiera e resta scorrevole */
 .vov,.modal-bg{transition:padding-bottom .18s ease}
-.vcard,.modal{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.vcard,.modal{max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
 .vcard-top{text-align:center;margin-bottom:20px}
 .vcard-ico{font-size:40px;margin-bottom:8px;line-height:1}
@@ -2282,7 +2282,7 @@ initSync();
 
 <!-- CAT MANAGER MODAL -->
 <div class="modal-bg" id="catManagerModal" onclick="if(event.target===this)closeModal('catManagerModal')">
-  <div class="modal" style="max-height:85vh;overflow-y:auto">
+  <div class="modal" style="overflow-y:auto">
     <div class="modal-handle" onclick="closeModal('catManagerModal')" style="cursor:pointer;padding:8px 0"></div>
     <div class="modal-title">🗂️ Gestisci categorie</div>
     <div style="font-size:13px;color:var(--gr);margin-bottom:18px">Aggiungi categorie personalizzate. Verranno usate anche dal riconoscimento vocale.</div>
