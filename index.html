@@ -13,6 +13,8 @@
   <meta name="theme-color" content="#FF7A2F">
   <link rel="manifest" id="pwa-manifest">
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <!-- Motion (motion.dev) per animazioni/gesti; ogni uso è guardato da if(window.Motion) con fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/motion@13.1.0/dist/motion.js"></script>
 <style>
 :root{
   --or:#6B8F71;--or2:#8AAF8F;--or3:#EEF3EE;--or4:#D4E3D4;
@@ -144,6 +146,10 @@ header{
 .modal{background:#fff;border-radius:26px 26px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;animation:sup .28s cubic-bezier(.22,1,.36,1)}
 @keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:40px;height:4px;background:var(--gr2);border-radius:2px;margin:0 auto 22px}
+/* App viva (Motion): gesti e animazioni */
+.modal-handle{touch-action:none;cursor:grab}
+.item-card{touch-action:pan-y}
+body.has-motion .modal, body.has-motion .vcard{animation:none}
 .modal-title{font-family:'Lato',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;color:var(--dk)}
 .modal-sub{font-size:14px;color:var(--gr);margin-bottom:20px}
 .m-row{margin-bottom:14px}
@@ -530,7 +536,7 @@ function renderContent(){
       var nota = it.note || '';
       var qtyDisplay = q > 1 ? ' <span style="color:var(--or);font-weight:700">x' + q + '</span>' : '';
       var notaHtml = nota ? '<div style="font-size:11px;color:var(--or);margin-top:2px;font-style:italic">📝 ' + nota + '</div>' : '';
-      h += '<div class="item-card ' + (it.done?'done':'') + '" style="--al:' + cat.color + '" onclick="toggle(' + it.id + ')">' +
+      h += '<div class="item-card ' + (it.done?'done':'') + '" data-id="' + it.id + '" style="--al:' + cat.color + '" onclick="toggle(' + it.id + ')">' +
         '<div class="cb"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7L5.5 10.5L12 3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
         '<div class="i-body">' +
           '<div class="i-icon">' + icon(it.name) + '</div>' +
@@ -2151,6 +2157,239 @@ async function initSync(){
   saveCustomCats = function(){ _saveCats.apply(this, arguments); scheduleCloudPush(); };
 })();
 initSync();
+
+/* ============================================================
+   APP VIVA — animazioni, gesti e micro-interazioni (Motion.dev)
+   Ogni uso è guardato da hasM; senza Motion l'app funziona identica.
+   NON tocca la logica di sync Firebase. ============================================================ */
+(function(){
+  var M = window.Motion;
+  var hasM = !!(M && M.animate);
+  if (hasM) document.body.classList.add('has-motion');
+  function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+  /* --- 1. PRESS con molla su tab e bottoni (ri-applicato a ogni render) --- */
+  var pressCleanup = null;
+  function applyPress(){
+    if(!hasM || !M.press) return;
+    try{ if(pressCleanup) pressCleanup(); }catch(e){}
+    try{
+      pressCleanup = M.press('.tab, .fab-item, .fab-main', function(el){
+        M.animate(el, { scale: .93 }, { type:'spring', stiffness:900, damping:26 });
+        return function(){ M.animate(el, { scale: 1 }, { type:'spring', stiffness:480, damping:14 }); };
+      });
+    }catch(e){ pressCleanup = null; }
+  }
+
+  /* --- 2. SWIPE sulle righe: destra = preso/fatto, sinistra = elimina --- */
+  var SWIPE_COMMIT = 96;
+  var suppressClick = false;
+  var contentEl = document.getElementById('content');
+  if (contentEl) {
+    contentEl.addEventListener('click', function(e){
+      if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+    }, true);
+  }
+  function deleteItemNow(id){ items = items.filter(function(i){ return i.id !== id; }); save(); render(); }
+
+  function attachSwipe(card){
+    var id = parseInt(card.getAttribute('data-id'), 10);
+    var startX=0, startY=0, dx=0, horiz=null, active=false, pid=null;
+    function paint(x){
+      card.style.transform = 'translateX(' + x + 'px)';
+      if (x > 24)      card.style.background = 'linear-gradient(90deg, rgba(90,158,110,.22), var(--wh) 62%)';
+      else if (x < -24) card.style.background = 'linear-gradient(270deg, rgba(192,57,43,.22), var(--wh) 62%)';
+      else              card.style.background = '';
+    }
+    function springBack(){
+      // transizione CSS: affidabile anche se rAF è throttlato
+      card.style.transition='transform .26s cubic-bezier(.34,1.4,.5,1)';
+      card.style.transform='translateX(0)';
+      card.style.background='';
+      setTimeout(function(){ card.style.transition=''; }, 280);
+    }
+    card.addEventListener('pointerdown', function(e){
+      if (e.target.closest('button')) return;
+      startX=e.clientX; startY=e.clientY; dx=0; horiz=null; active=true; pid=e.pointerId;
+    });
+    card.addEventListener('pointermove', function(e){
+      if(!active) return;
+      dx = e.clientX - startX; var dy = e.clientY - startY;
+      if(horiz===null){
+        if(Math.abs(dx)<8 && Math.abs(dy)<8) return;
+        horiz = Math.abs(dx) > Math.abs(dy);
+        if(horiz){ try{ card.setPointerCapture(pid); }catch(err){} card.style.transition='none'; }
+        else { active=false; return; }   // scroll verticale: lascia fare al browser
+      }
+      paint(dx);
+    });
+    function end(){
+      if(!active) return; active=false;
+      try{ card.releasePointerCapture(pid); }catch(err){}
+      if(horiz && Math.abs(dx) > 8) suppressClick = true;
+      if(horiz && dx >= SWIPE_COMMIT){
+        buzz(30); toggle(id);            // toggle re-renderizza
+      } else if(horiz && dx <= -SWIPE_COMMIT){
+        buzz([20,40]);
+        // fly-off via CSS + delete garantita da setTimeout (non dipende da rAF/.finished)
+        card.style.transition='transform .18s ease, opacity .18s ease';
+        card.style.transform='translateX(-120%)'; card.style.opacity='0';
+        setTimeout(function(){ deleteItemNow(id); }, 180);
+      } else { springBack(); }
+      horiz=null;
+    }
+    card.addEventListener('pointerup', end);
+    card.addEventListener('pointercancel', function(){ if(active){ active=false; springBack(); horiz=null; } });
+  }
+  function applySwipe(){
+    var cards = document.querySelectorAll('#content .item-card');
+    for(var i=0;i<cards.length;i++){ if(!cards[i]._swipe){ cards[i]._swipe=true; attachSwipe(cards[i]); } }
+  }
+
+  /* --- 3. Contatori animati (con timeout di sicurezza se rAF è sospeso) --- */
+  var lastPct = 0, lastRem = null, prevCeleb = 0;
+  function animateNumber(el, from, to, suffix){
+    if(!el) return;
+    if(!hasM || from===to){ el.textContent = to + suffix; return; }
+    var ctrl;
+    try{ ctrl = M.animate(from, to, { duration:.6, ease:[.2,.7,.3,1], onUpdate:function(v){ el.textContent = Math.round(v) + suffix; } }); }
+    catch(e){ el.textContent = to + suffix; return; }
+    setTimeout(function(){ try{ ctrl && ctrl.stop && ctrl.stop(); }catch(e){} el.textContent = to + suffix; }, 850);
+  }
+
+  /* --- 4. celebrazione al 100% --- */
+  function celebrate(){
+    buzz([30,50,30]);
+    var strip = document.querySelector('.prog-strip') || document.querySelector('header');
+    if(strip && hasM){ try{ M.animate(strip, { scale:[1,1.04,1] }, { duration:.5 }); }catch(e){} }
+    if(!hasM) return;
+    try{
+      var burst = document.createElement('div');
+      burst.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden';
+      document.body.appendChild(burst);
+      var em=['🎉','✅','🛒','🎊','⭐'];
+      for(var i=0;i<14;i++){ (function(i){
+        var s=document.createElement('div'); s.textContent=em[i%em.length];
+        s.style.cssText='position:absolute;top:-30px;left:'+(Math.random()*100)+'%;font-size:'+(18+Math.random()*16)+'px';
+        burst.appendChild(s);
+        M.animate(s, { y:[-30, window.innerHeight+40], x:[0,(Math.random()*80-40)], rotate:[0,Math.random()*360], opacity:[1,1,0] },
+          { duration:1.1+Math.random()*0.6, ease:'easeIn', delay:Math.random()*0.25 });
+      })(i); }
+      setTimeout(function(){ burst.remove(); }, 2200);
+    }catch(e){}
+  }
+
+  function afterRender(){
+    var d = items.filter(function(i){return i.done;}).length, t = items.length;
+    var tgtPct = t ? Math.round(d/t*100) : 0, tgtRem = t - d;
+    animateNumber(document.getElementById('progPct'), lastPct, tgtPct, '%'); lastPct = tgtPct;
+    var bigEl = document.getElementById('bigCountNum');
+    if(bigEl){ animateNumber(bigEl, (lastRem==null?tgtRem:lastRem), tgtRem, ''); lastRem = tgtRem; }
+    applyPress(); applySwipe();
+    if(tgtPct===100 && prevCeleb!==100) celebrate();
+    prevCeleb = tgtPct;
+  }
+
+  /* --- wrap render / toggle / push --- */
+  var _render = render;
+  render = function(){ _render.apply(this, arguments); afterRender(); };
+
+  var _toggle = toggle;
+  toggle = function(id){
+    var it = items.find(function(i){ return i.id===id; });
+    var willDone = it ? !it.done : false;
+    _toggle(id);
+    if(willDone){
+      var card = document.querySelector('#content .item-card[data-id="'+id+'"]');
+      if(card && hasM){ try{ M.animate(card, { scale:[1,1.06,1] }, { duration:.3 }); }catch(e){} }
+    }
+  };
+
+  var _push = push;
+  push = function(name, cat){
+    var before = items.map(function(i){ return i.id; });
+    _push(name, cat);
+    var added = items.filter(function(i){ return before.indexOf(i.id) < 0; });
+    if(added.length){
+      buzz(20);
+      added.forEach(function(a){
+        var card = document.querySelector('#content .item-card[data-id="'+a.id+'"]');
+        if(card && hasM){ try{ M.animate(card, { scale:[0.8,1], opacity:[0,1] }, { type:'spring', stiffness:500, damping:24 }); }catch(e){} }
+      });
+    }
+  };
+
+  /* --- 5. Modali: apertura con molla + drag-to-dismiss dalla maniglia --- */
+  function springOpen(sheet){
+    if(!hasM || !sheet) return;
+    try{ M.animate(sheet, { y:[48,0], opacity:[0,1] }, { type:'spring', stiffness:320, damping:32 }); }catch(e){}
+    // sicurezza: se rAF è sospeso, ripristina comunque lo stato visibile (mai modale invisibile)
+    setTimeout(function(){ try{ sheet.style.opacity=''; sheet.style.transform=''; }catch(e){} }, 520);
+  }
+  try{
+    var mo = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if(m.attributeName!=='class') return;
+        var t=m.target;
+        if(t.classList && t.classList.contains('open') && !t._wasOpen){ t._wasOpen=true; springOpen(t.querySelector('.modal, .vcard')); }
+        else if(t.classList && !t.classList.contains('open')){ t._wasOpen=false; }
+      });
+    });
+    document.querySelectorAll('.modal-bg, .vov').forEach(function(el){ mo.observe(el, { attributes:true, attributeFilter:['class'] }); });
+  }catch(e){}
+
+  document.addEventListener('pointerdown', function(e){
+    var handle = e.target.closest && e.target.closest('.modal-handle');
+    if(!handle) return;
+    var sheet = handle.closest('.modal, .vcard');
+    var overlay = handle.closest('.modal-bg, .vov');
+    if(!sheet || !overlay) return;
+    var startY=e.clientY, dy=0, pid=e.pointerId, active=true;
+    sheet.style.transition='none';
+    try{ handle.setPointerCapture(pid); }catch(err){}
+    function move(ev){ if(!active) return; dy=Math.max(0, ev.clientY-startY); sheet.style.transform='translateY('+dy+'px)'; overlay.style.opacity=String(Math.max(.3, 1-dy/400)); }
+    function up(){
+      active=false;
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
+      try{ handle.releasePointerCapture(pid); }catch(err){}
+      overlay.style.opacity='';
+      if(dy>90){
+        // chiusura: CSS + rimozione classe garantita da setTimeout
+        sheet.style.transition='transform .2s ease, opacity .2s ease';
+        sheet.style.transform='translateY(340px)'; sheet.style.opacity='0';
+        setTimeout(function(){ overlay.classList.remove('open'); sheet.style.transition=''; sheet.style.transform=''; sheet.style.opacity=''; }, 200);
+      } else {
+        // ritorno in posizione
+        sheet.style.transition='transform .24s cubic-bezier(.34,1.4,.5,1)';
+        sheet.style.transform='translateY(0)';
+        setTimeout(function(){ sheet.style.transition=''; }, 260);
+      }
+    }
+    document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+  });
+
+  /* --- 6. Transizione tra tab/categorie con molla --- */
+  function tabIndex(name){ if(name==='all') return 0; var i=CATS.findIndex(function(c){return c.name===name;}); return i<0?0:i+1; }
+  var _setTab = setTab;
+  setTab = function(t){
+    var from=tabIndex(tab), to=tabIndex(t), dir = to>from?1:(to<from?-1:0);
+    _setTab(t);
+    var c=document.getElementById('content');
+    if(hasM && c && dir!==0){
+      try{ M.animate(c, { opacity:[0,1], x:[dir*30, 0] }, { type:'spring', stiffness:260, damping:30 }); }catch(e){}
+      // sicurezza: mai contenuto invisibile se rAF è sospeso
+      setTimeout(function(){ try{ c.style.opacity=''; c.style.transform=''; }catch(e){} }, 500);
+    }
+  };
+
+  /* --- init: aggancia agli elementi già renderizzati + primo conteggio animato --- */
+  applyPress(); applySwipe();
+  (function(){
+    var d=items.filter(function(i){return i.done;}).length, t=items.length, p=t?Math.round(d/t*100):0;
+    animateNumber(document.getElementById('progPct'), 0, p, '%'); lastPct=p;
+    animateNumber(document.getElementById('bigCountNum'), 0, t-d, ''); lastRem=t-d; prevCeleb=p;
+  })();
+})();
 </script>
 
 <script>
@@ -2175,10 +2414,18 @@ initSync();
 
   // Service Worker per offline
   if ('serviceWorker' in navigator) {
+    // Auto-update: quando il nuovo SW prende il controllo, ricarica UNA volta (guardia anti-loop)
+    var _reloadedForSW = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (_reloadedForSW) return;
+      _reloadedForSW = true;
+      window.location.reload();
+    });
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('./sw.js')
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
         .then(function(reg) {
           console.log('SW registrato');
+          try { reg.update(); } catch(e) {}
           navigator.serviceWorker.ready.then(function(r) {
             var sw = r.active;
             if (!sw) return;

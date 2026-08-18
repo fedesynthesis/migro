@@ -1,5 +1,6 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v43';
+const CACHE_NAME = 'migross-v44';
+const MOTION_URL = 'https://cdn.jsdelivr.net/npm/motion@13.1.0/dist/motion.js';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,7 +11,11 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => {
+        // Motion CDN: precache best-effort, NON dentro addAll (che è atomico)
+        cache.add(MOTION_URL).catch(() => {});
+        return cache.addAll(APP_SHELL);
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -41,6 +46,19 @@ self.addEventListener('fetch', event => {
   // NON intercettare Firebase/Firestore: sempre rete diretta, mai cache
   // (altrimenti la cache romperebbe la sincronizzazione in tempo reale).
   if (/firestore\.googleapis\.com|firebaseinstallations\.googleapis\.com|firebase\.googleapis\.com|firebaseremoteconfig\.googleapis\.com|gstatic\.com\/firebasejs/.test(req.url)) {
+    return;
+  }
+
+  // Motion (cdn.jsdelivr.net): cache-first a runtime, disponibile anche offline.
+  // (l'esclusione firebase/firestore qui sopra resta intatta)
+  if (/cdn\.jsdelivr\.net/.test(req.url)) {
+    event.respondWith(
+      caches.match(req).then(hit => hit || fetch(req).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(req, clone)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req)))
+    );
     return;
   }
 
