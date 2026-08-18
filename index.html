@@ -2174,7 +2174,7 @@ initSync();
     if(!hasM || !M.press) return;
     try{ if(pressCleanup) pressCleanup(); }catch(e){}
     try{
-      pressCleanup = M.press('.tab, .fab-item, .fab-main', function(el){
+      pressCleanup = M.press('.tab, .fab-item', function(el){
         M.animate(el, { scale: .93 }, { type:'spring', stiffness:900, damping:26 });
         return function(){ M.animate(el, { scale: 1 }, { type:'spring', stiffness:480, damping:14 }); };
       });
