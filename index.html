@@ -303,9 +303,9 @@ body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
   <div class="vcard" style="padding-bottom:36px">
 
     <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:32px;margin-bottom:4px">🎙️</div>
+      <div style="font-size:32px;margin-bottom:4px">🛒</div>
       <div style="font-family:'Lato',sans-serif;font-size:20px;font-weight:700;color:var(--dk)">Lista provvisoria</div>
-      <div style="font-size:13px;color:var(--gr);margin-top:4px" id="vStat">Premi il microfono e parla</div>
+      <div style="font-size:13px;color:var(--gr);margin-top:4px" id="vStat">Scrivi un prodotto e premi ➕</div>
     </div>
 
     <!-- LISTA PROVVISORIA -->
@@ -314,8 +314,8 @@ body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
       <div id="vLista"></div>
     </div>
 
-    <!-- TASTO MICROFONO con onde sovrapposte -->
-    <div style="margin-bottom:12px;touch-action:none;position:relative">
+    <!-- TASTO MICROFONO con onde sovrapposte (temporaneamente nascosto) -->
+    <div id="vMicWrap" style="margin-bottom:12px;touch-action:none;position:relative;display:none">
       <div id="vMicBtn"
         onmousedown="vPressStart(event)" onmouseup="vPressStop(event)" onmouseleave="vPressStop(event)"
         ontouchstart="vPressStart(event)" ontouchend="vPressStop(event)" ontouchcancel="vPressStop(event)"
@@ -337,11 +337,12 @@ body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
     </div>
 
     <!-- INPUT TASTIERA -->
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <input id="kbInput" class="inp" placeholder="Scrivi articolo/i..."
+    <div style="display:flex;gap:8px;margin-bottom:14px;position:relative">
+      <input id="kbInput" class="inp" placeholder="Scrivi un prodotto…" autocomplete="off" autocorrect="off"
         style="flex:1;border-radius:12px;padding:11px 14px;font-size:14px"
         onkeydown="if(event.key==='Enter')kbAggiungi()"/>
-      <button onclick="kbAggiungi()" style="background:var(--or);color:#fff;border:none;border-radius:12px;padding:11px 18px;font-size:18px;cursor:pointer;flex-shrink:0">➕</button>
+      <button onclick="kbAggiungi()" style="background:var(--or);color:#fff;border:none;border-radius:12px;padding:11px 18px;font-size:18px;cursor:pointer;flex-shrink:0" title="Aggiungi alla lista provvisoria">➕</button>
+      <div id="kbSug" class="m-sug" style="top:auto;bottom:100%;margin:0 0 6px 0"></div>
     </div>
 
     <!-- BOTTONI AZIONE -->
@@ -729,6 +730,48 @@ function doAddModal(){
   if(cr) cr.style.display = 'none';
   if(sub) sub.textContent = 'Aggiunto in “' + cat + '” ✓ — scrivine un altro o chiudi';
   mn.focus();
+}
+
+/* Apre la schermata "Lista provvisoria" (senza microfono): si accumulano gli
+   articoli e poi si aggiungono in gruppo con "Aggiungi alla spesa". */
+function openAddSheet(){
+  buildKnownProducts();
+  vListaItems = [];
+  var stat = document.getElementById('vStat'); if(stat) stat.textContent = 'Scrivi un prodotto e premi ➕';
+  var inp = document.getElementById('kbInput');
+  if(inp){ inp.value = ''; inp.oninput = renderKbSuggestions; }
+  var sg = document.getElementById('kbSug'); if(sg){ sg.className = 'm-sug'; sg.innerHTML = ''; }
+  vRenderLista();
+  document.getElementById('vov').classList.add('open');
+  setTimeout(function(){ if(inp) inp.focus(); }, 300);
+}
+/* Suggerimenti mentre digiti nella schermata provvisoria */
+function renderKbSuggestions(){
+  var box = document.getElementById('kbSug'); if(!box) return;
+  var q = (document.getElementById('kbInput').value || '').trim().toLowerCase();
+  if(q.length < 1 || q.indexOf(',') !== -1){ box.className = 'm-sug'; box.innerHTML = ''; return; }
+  var starts = [], incl = [];
+  KNOWN_PRODUCTS.forEach(function(o){
+    var n = o.name.toLowerCase();
+    if(n === q) return;
+    if(n.indexOf(q) === 0) starts.push(o); else if(n.indexOf(q) !== -1) incl.push(o);
+  });
+  var list = starts.concat(incl).slice(0, 5);
+  if(!list.length){ box.className = 'm-sug'; box.innerHTML = ''; return; }
+  box.innerHTML = list.map(function(o){
+    var cat = o.cat || guessCat(o.name) || '';
+    var nm = o.name.replace(/"/g, '&quot;');
+    return '<button type="button" data-nm="' + nm + '"><span class="s-nm">' + o.name + '</span>' +
+           (cat ? '<span class="s-ct">' + cat + '</span>' : '') + '</button>';
+  }).join('');
+  box.className = 'm-sug show';
+  [].forEach.call(box.querySelectorAll('button'), function(b){
+    b.onclick = function(){
+      document.getElementById('kbInput').value = b.getAttribute('data-nm');
+      box.className = 'm-sug'; box.innerHTML = '';
+      kbAggiungi();   // aggiunge alla lista provvisoria
+    };
+  });
 }
 
 function openSettings(){document.getElementById('settModal').classList.add('open');}
@@ -1295,11 +1338,12 @@ function kbAggiungi() {
   var defaultCat = (typeof CATS !== 'undefined' && CATS[0]) ? CATS[0].name : 'Colazione';
   nomi.forEach(function(nome) {
     nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-    var cat = guessCat(nome);
+    var cat = (typeof knownCatFor === 'function' ? knownCatFor(nome) : null) || guessCat(nome);
     vListaItems.push({ name: nome, cat: cat || defaultCat, catManuale: cat !== null });
   });
   vRenderLista();
   inp.value = '';
+  var sg = document.getElementById('kbSug'); if(sg){ sg.className = 'm-sug'; sg.innerHTML = ''; }
   inp.focus();
 }
 
@@ -1425,8 +1469,8 @@ function initFab() {
   document.getElementById('fabBtnVoice').onclick = function(ev) {
     ev.stopPropagation();
     chiudi();
-    // Microfono temporaneamente disattivato: apertura manuale (nome + categoria)
-    setTimeout(function(){ openAddModal(); }, 150);
+    // Microfono disattivato: apre la lista provvisoria (accumula + aggiungi in gruppo)
+    setTimeout(function(){ openAddSheet(); }, 150);
   };
   document.getElementById('fabBtnDone').onclick = function(ev) {
     ev.stopPropagation();
