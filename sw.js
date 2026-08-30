@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v54';
+const CACHE_NAME = 'migross-v55';
 const MOTION_URL = 'https://cdn.jsdelivr.net/npm/motion@13.1.0/dist/motion.js';
 const APP_SHELL = [
   './',
@@ -103,8 +103,11 @@ function cacheFirst(req) {
 function staleWhileRevalidate(req) {
   return caches.open(CACHE_NAME).then(cache =>
     cache.match(req).then(cached => {
-      const network = fetch(req)
+      // no-store: salta la cache HTTP di GitHub (max-age 600), altrimenti l'aggiornamento
+      // impiegherebbe fino a 10 minuti ad arrivare
+      const network = fetch(new Request(req.url, {cache:'no-store', credentials:'same-origin'}))
         .then(res => putInCache(req, res))
+        .catch(() => fetch(req).then(res => putInCache(req, res)))
         .catch(() => cached || caches.match('./index.html'));
       return cached || network;
     })
