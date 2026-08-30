@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v51';
+const CACHE_NAME = 'migross-v52';
 const MOTION_URL = 'https://cdn.jsdelivr.net/npm/motion@13.1.0/dist/motion.js';
 const APP_SHELL = [
   './',
