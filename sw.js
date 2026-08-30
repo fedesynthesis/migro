@@ -1,5 +1,5 @@
 // Service Worker - Spesa Migross
-const CACHE_NAME = 'migross-v52';
+const CACHE_NAME = 'migross-v53';
 const MOTION_URL = 'https://cdn.jsdelivr.net/npm/motion@13.1.0/dist/motion.js';
 const APP_SHELL = [
   './',
@@ -42,6 +42,7 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  try{ if (new URL(req.url).pathname.startsWith('/hub/')) return; }catch(_){}   // barra Hub: sempre dalla rete
 
   // NON intercettare Firebase/Firestore: sempre rete diretta, mai cache
   // (altrimenti la cache romperebbe la sincronizzazione in tempo reale).
