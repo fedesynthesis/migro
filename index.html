@@ -1550,6 +1550,9 @@ function refreshCatsWithCustom() {
       CAT_KEYWORDS[c.name] = c.keywords;
     }
   });
+  // Emoji personalizzate (anche per le predefinite)
+  var emOv = JSON.parse(localStorage.getItem('migross_cat_emoji') || '{}');
+  CATS.forEach(function(c){ if (emOv[c.name]) c.emoji = emOv[c.name]; });
 }
 
 function saveCatOrder() {
@@ -1941,7 +1944,22 @@ function editCatKeywords(catName) {
   var current = (extraKw[catName]||[]).join(', ');
   document.getElementById('kwModalTitle').textContent = catName;
   document.getElementById('kwInput').value = current;
+  var catObj = CATS.find(function(c){ return c.name===catName; });
+  var em = catObj ? catObj.emoji : '🏷️';
+  document.getElementById('kwEmoji').value = em;
+  buildEmojiGrid(em);
   document.getElementById('kwModal').classList.add('open');
+}
+function buildEmojiGrid(sel){
+  var EM=["🛒","🥦","🍎","🍌","🍅","🥕","🥩","🐟","🍞","🧀","🥛","🥚","🧴","🧹","🧻","🧼","🐱","🐶","💧","🥤","🍝","🍲","☀️","🍫","🍪","🥫","🧈","🌶️","🧄","🍋","🥗","🍚","🍗","🍕","🍷","🧃","❄️","🧷","📦","🏷️"];
+  var g=document.getElementById('kwEmojiGrid'); if(!g) return;
+  g.innerHTML=EM.map(function(e){ var on=e===sel;
+    return '<button type="button" data-em="'+e+'" style="width:34px;height:34px;font-size:19px;line-height:1;cursor:pointer;border-radius:9px;border:2px solid '+(on?'var(--or)':'var(--gr2)')+';background:'+(on?'#fff7f0':'var(--off)')+'">'+e+'</button>';
+  }).join('');
+  g.querySelectorAll('button').forEach(function(b){ b.onclick=function(){
+    document.getElementById('kwEmoji').value=b.dataset.em;
+    g.querySelectorAll('button').forEach(function(x){ var o=x.dataset.em===b.dataset.em; x.style.borderColor=o?'var(--or)':'var(--gr2)'; x.style.background=o?'#fff7f0':'var(--off)'; });
+  }; });
 }
 
 function salvaKeywords() {
@@ -1950,8 +1968,21 @@ function salvaKeywords() {
   var kw = val.split(',').map(function(k){ return k.trim().toLowerCase(); }).filter(function(k){ return k.length>0; });
   extraKw[editingCatName] = kw;
   localStorage.setItem('migross_extra_kw', JSON.stringify(extraKw));
+  // emoji: salvo l'override (vale per categorie custom E predefinite)
+  var em = (document.getElementById('kwEmoji').value||'').trim();
+  if (em) {
+    var ov = JSON.parse(localStorage.getItem('migross_cat_emoji') || '{}');
+    ov[editingCatName] = em;
+    localStorage.setItem('migross_cat_emoji', JSON.stringify(ov));
+    // se è una custom, aggiorno anche lì per coerenza
+    var custom = loadCustomCats(); var ch=false;
+    custom.forEach(function(c){ if(c.name===editingCatName){ c.emoji=em; ch=true; } });
+    if(ch) saveCustomCats(custom);
+  }
+  refreshCatsWithCustom();
   closeModal('kwModal');
   renderCatManagerLists();
+  if (typeof render === 'function') render();
 }
 
 var kwRecog = null;
@@ -2721,9 +2752,15 @@ initSync();
 <div class="modal-bg" id="kwModal" onclick="if(event.target===this)closeModal('kwModal')">
   <div class="modal">
     <div class="modal-handle" onclick="closeModal('kwModal')" style="cursor:pointer;padding:8px 0"></div>
-    <div class="modal-title">✏️ Parole chiave per</div>
+    <div class="modal-title">✏️ Modifica categoria</div>
     <div id="kwModalTitle" style="font-family:'Lato',sans-serif;font-size:18px;font-weight:700;color:var(--or);margin-bottom:14px"></div>
-    <div style="font-size:13px;color:var(--gr);margin-bottom:12px">Aggiungi esempi di articoli — separate da virgola.<br>Il riconoscimento vocale le userà automaticamente.</div>
+    <div style="font-size:12px;color:var(--gr);font-weight:700;margin-bottom:6px">EMOJI</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <input id="kwEmoji" maxlength="4" style="width:56px;flex:none;text-align:center;font-size:26px;border:2px solid var(--gr2);border-radius:12px;padding:6px;background:var(--off)">
+      <div id="kwEmojiGrid" style="flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:5px;max-height:120px;overflow-y:auto"></div>
+    </div>
+    <div style="font-size:12px;color:var(--gr);font-weight:700;margin-bottom:6px">PAROLE CHIAVE</div>
+    <div style="font-size:13px;color:var(--gr);margin-bottom:8px">Esempi di articoli — separate da virgola. Il riconoscimento vocale le userà.</div>
     <textarea id="kwInput" class="m-inp" rows="3" placeholder="es. pomodorini, cherry, datterini, insalata..."
       style="resize:none;font-size:14px;padding:12px;margin-bottom:10px;width:100%"></textarea>
     <div id="kwVoiceBtn"
