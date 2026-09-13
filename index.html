@@ -2247,8 +2247,14 @@ async function initSync(){
         var data = snap.exists() ? snap.data() : null;
         var first = !localStorage.getItem(M_INIT);
         if(!data){ cloudPush(); }                       // server vuoto → semino da questo telefono
-        else if(first){ applyData(mergeUnion(snapshotData(), data)); cloudPush(); } // fusione senza perdite
-        else { applyData(data); }                       // poi il server è la verità condivisa
+        else {
+          // FONDO SEMPRE lista locale + server: nulla si perde al refresh, anche se il
+          // server è rimasto indietro. Se in locale c'erano voci non ancora sul server,
+          // ripubblico (auto-guarigione) — solo quando serve, per non innescare loop.
+          var merged = mergeUnion(snapshotData(), data);
+          applyData(merged);
+          if (merged.items.length > (data.items||[]).length) cloudPush();
+        }
         localStorage.setItem(M_INIT,'1');
       },
       function(err){ setConn('off','Sync non disponibile'); console.error("Sync:", err); }
