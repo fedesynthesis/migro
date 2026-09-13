@@ -227,7 +227,7 @@ body.kb-open .vcard,body.kb-open .modal{padding-bottom:18px}
       <div class="logo-eye">La tua lista della spesa <span id="swVer" style="opacity:.5;font-weight:600"></span></div>
       <div class="logo">Spesa <span style="color:rgba(255,255,255,.55);font-weight:400">Migross</span></div>
     </div>
-    <div id="syncPill" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:#2A1500;font-size:11px;font-weight:700;font-family:'Lato',sans-serif;padding:5px 11px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap">
+    <div id="syncPill" onclick="forceDefinitiva()" title="Rendi questo telefono la versione definitiva" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:#2A1500;font-size:11px;font-weight:700;font-family:'Lato',sans-serif;padding:5px 11px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap;cursor:pointer">
       <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#e0b000;transition:background .3s"></span>
       <span id="syncTxt">Sync…</span>
     </div>
@@ -2204,6 +2204,30 @@ async function cloudPush(){
   try{ await FB.setDoc(fdoc, snapshotData()); dirty=false; }
   catch(e){ console.warn("Sync: scrittura fallita", e); }
   finally{ pendingWrite=false; }
+}
+
+/* Rende QUESTO telefono la versione definitiva: sovrascrive il cloud esattamente
+   con la lista locale, senza fondere nulla. Da usare con l'altro telefono chiuso. */
+async function forceDefinitiva(){
+  if(!fbReady){ alert('Sync non ancora pronta. Riprova tra un istante.'); return; }
+  var it = readLS('migross_v1', []);
+  if(!confirm('Rendere QUESTO telefono la versione DEFINITIVA?\n\n'
+      + 'La lista sul cloud ('+ it.length +' articoli su questo telefono) verrà sostituita '
+      + 'esattamente con quella di questo telefono. Le voci presenti solo sull\'altro '
+      + 'cellulare verranno eliminate.\n\nAssicurati che l\'app sull\'altro cellulare sia CHIUSA.')) return;
+  vibrate(30);
+  var t=document.getElementById('syncTxt');
+  if(t) t.textContent='Imposto come definitiva…';
+  try{
+    await FB.setDoc(fdoc, snapshotData());   // overwrite pieno, nessuna fusione
+    dirty=false;
+    if(t) t.textContent='Definitiva ✓';
+    setTimeout(function(){ setConn('on','Sincronizzato ✓'); }, 2200);
+  }catch(e){
+    console.warn('Definitiva: scrittura fallita', e);
+    alert('Non è riuscito a salvare sul cloud. Controlla la connessione e riprova.');
+    setConn('on','Sincronizzato ✓');
+  }
 }
 
 /* Scrive i dati ricevuti dal server nel localStorage e rinfresca la UI.
